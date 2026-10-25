@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+
+- **Marchands sur la scène** : un acteur tient la boutique. Double-clic sur son token pour l'ouvrir (Alt + double-clic pour le MJ), ou ciblage du marchand puis bouton Boutiques. Son portrait s'affiche dans la boutique, et un bouton Boutique apparaît sur sa fiche. Une distance maximale au marchand est réglable.
+- **Caisse** : illimitée, montant fixe ou bourse du marchand (les achats l'enrichissent, les rachats la vident).
+- **Réputation** : ajustement de prix par personnage et par boutique (remise ou majoration, à l'achat comme à la revente).
+- **Marchandage** : jet fait par le MJ (Persuasion pour dnd5e, formule réglable) contre une difficulté. Réussite = remise plafonnée, échec de 5 ou plus = marchand vexé. L'effet dure un temps réglable.
+- L'éditeur de boutique passe en trois onglets : Boutique, Articles, Clientèle.
+- **Échéances** des dettes avec pénalité de retard, rappels la veille (réglable) et au retard.
+- **Historique** des transactions : dernières entrées dans la bourse, fenêtre complète filtrée par personnage, export CSV.
+- **Otium** : les commandes de taverne sont inscrites à l'historique.
+- **API pour les autres modules** : `pay`, `receive` et **cagnottes de mises** (`pot.create`, `stake`, `settle`, `refund`), hook `mint-economy.ready`.
+
 ## 0.1.0
 
 Première version.

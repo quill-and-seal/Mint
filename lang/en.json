@@ -21,6 +21,30 @@
         "Name": "Currencies",
         "Label": "Configure currencies",
         "Hint": "Monetary systems, coins, exchange rates, money changer fee and link with the game system's sheet."
+      },
+      "HistorySize": {
+        "Name": "History size",
+        "Hint": "Number of transactions kept in the history (the oldest are removed). 0 = no history."
+      },
+      "MerchantDoubleClick": {
+        "Name": "Double-click merchants",
+        "Hint": "Double-clicking a merchant's token opens their shop for players. The GM opens the sheet, or the shop with Alt + double-click."
+      },
+      "MerchantRange": {
+        "Name": "Merchant range",
+        "Hint": "Maximum distance (grid units) between a character and the merchant's token to buy or sell. 0 = no limit."
+      },
+      "HaggleFormula": {
+        "Name": "Haggle roll",
+        "Hint": "Roll formula, using the character's data (e.g. 1d20 + @skills.per.total). Empty = Persuasion for dnd5e, 1d20 for other systems."
+      },
+      "DueReminderDays": {
+        "Name": "Reminder before due date",
+        "Hint": "Warn the parties of a debt this many days before it is due (world time). 0 = only when it is due."
+      },
+      "OtiumHistory": {
+        "Name": "Otium orders in history",
+        "Hint": "Record orders placed in Otium taverns in Mint's history."
       }
     },
     "Preset": {
@@ -93,7 +117,18 @@
       "NothingToSell": "Nothing this merchant buys back.",
       "SellHint": "The merchant buys back at {ratio}% of their price.",
       "ConfirmBuy": "{name} buys {qty} × {item} for {amount}?",
-      "ConfirmSell": "Sell {qty} × {item} for {amount}?"
+      "ConfirmSell": "Sell {qty} × {item} for {amount}?",
+      "OpenMerchant": "Shop",
+      "HeldBy": "Run by {name}",
+      "Discount": "{pct}% discount",
+      "Markup": "{pct}% markup",
+      "ReputationHint": "Your reputation with this shop",
+      "Haggle": "Haggle",
+      "HaggleHint": "Try to talk the prices down (DC {dc})",
+      "HaggleDone": "Already haggled here: wait for it to wear off",
+      "HaggleWon": "Haggled: −{pct}%",
+      "HaggleLost": "Offended merchant: +{pct}%",
+      "HaggleLasts": "About {hours} h left"
     },
     "Editor": {
       "Title": "Shop — {name}",
@@ -129,7 +164,43 @@
       "Modifier": "×",
       "ModifierHint": "Item-specific multiplier.",
       "Buyback": "Buyback",
-      "BuybackHint": "The merchant buys this item back."
+      "BuybackHint": "The merchant buys this item back.",
+      "Tab": {
+        "shop": "Shop",
+        "items": "Items",
+        "customers": "Customers"
+      },
+      "Merchant": "Merchant",
+      "NoMerchant": "— No merchant —",
+      "MerchantHint": "Drop an actor or a token into this window to make them the merchant. Double-clicking their token opens the shop for players.",
+      "MerchantSet": "{name} now runs {shop}.",
+      "UnlinkMerchant": "Remove merchant",
+      "Prices": "Prices and restock",
+      "TillMode": "Till",
+      "TillHint": "What the merchant can pay when items are sold to them.",
+      "Till": {
+        "unlimited": "Unlimited",
+        "fixed": "Fixed amount",
+        "merchant": "Merchant's purse"
+      },
+      "TillNoMerchant": "Pick a merchant: their purse is the till.",
+      "Haggle": "Haggling",
+      "HaggleEnabled": "Allow haggling",
+      "HaggleDC": "DC",
+      "HaggleDCHint": "Result to reach on the haggle roll.",
+      "HaggleMax": "Max discount (%)",
+      "HaggleMaxHint": "A success gives a 5% discount, plus 1% per point above the DC, up to this cap.",
+      "HagglePenalty": "Offense (%)",
+      "HagglePenaltyHint": "Markup when the roll fails by 5 or more.",
+      "HaggleHours": "Duration (hours)",
+      "HaggleHoursHint": "How long (world time) the result lasts before haggling again.",
+      "HaggleFormula": "Roll used: <code>{formula}</code> (module settings).",
+      "ClearHaggles": "Forget ongoing haggles",
+      "Reputation": "Reputation",
+      "ReputationHint": "Price adjustment for each character: −10 = 10% discount (and selling 10% higher), +20 = 20% more expensive.",
+      "PriceAdjust": "Adjustment",
+      "HaggleCurrent": "Ongoing haggle",
+      "NoCharacters": "No player characters."
     },
     "Ledger": {
       "Title": "Loans and debts",
@@ -181,7 +252,14 @@
         "cancelled": "Cancelled",
         "refused": "Refused",
         "withdrawn": "Withdrawn"
-      }
+      },
+      "Due": "Due date",
+      "DueHint": "Number of days (world time) to repay. 0 = no due date.",
+      "LateFee": "late fee",
+      "LateFeeHint": "Late fee: {pct}% of the principal",
+      "DueIn": "due in {days} d",
+      "DueToday": "due today",
+      "Overdue": "{days} d overdue"
     },
     "Currencies": {
       "Title": "Currencies",
@@ -223,7 +301,13 @@
       "Loan": "<strong>{creditor}</strong> lends {amount} to <strong>{debtor}</strong>.",
       "Debt": "<strong>{debtor}</strong> owes {amount} to <strong>{creditor}</strong>.",
       "Repay": "<strong>{debtor}</strong> repays {amount} to <strong>{creditor}</strong> ({left} left).",
-      "Forgive": "<strong>{creditor}</strong> forgives <strong>{debtor}</strong>'s debt."
+      "Forgive": "<strong>{creditor}</strong> forgives <strong>{debtor}</strong>'s debt.",
+      "Overdue": "<strong>{debtor}</strong>'s debt to <strong>{creditor}</strong> is overdue ({amount} left).",
+      "Pay": "<strong>{name}</strong> pays {amount}. {reason}",
+      "Receive": "<strong>{name}</strong> receives {amount}. {reason}",
+      "Stake": "<strong>{name}</strong> stakes {amount} ({pot}).",
+      "Settle": "{pot}: {winners} wins the pot.",
+      "Refund": "{pot}: stakes are returned."
     },
     "Notify": {
       "Proposal": "{from} proposes a debt of {amount}: open Loans and debts to answer.",
@@ -231,7 +315,9 @@
       "Accepted": "{name} accepted the debt of {amount}.",
       "Refused": "{name} refused the debt of {amount}.",
       "Repaid": "{name} repaid you {amount}.",
-      "Forgiven": "{name} forgave your debt."
+      "Forgiven": "{name} forgave your debt.",
+      "DueSoon": "Due in {days} d: {debtor} still owes {amount} to {creditor}.",
+      "Overdue": "Overdue debt: {debtor} still owes {amount} to {creditor}."
     },
     "Error": {
       "Unexpected": "Mint: unexpected error (details in the console).",
@@ -260,7 +346,34 @@
       "NoParty": "One of the parties' names is missing.",
       "NotParty": "You're not involved in this debt.",
       "NotPending": "This proposal is no longer pending.",
-      "NotActive": "This debt is no longer ongoing."
+      "NotActive": "This debt is no longer ongoing.",
+      "TooFar": "Get closer to {name} to trade.",
+      "NoHaggle": "No haggling at {shop}.",
+      "AlreadyHaggled": "You already haggled at {shop}: come back later.",
+      "NoPot": "This pot no longer exists.",
+      "PotClosed": "This pot is already settled.",
+      "NotPotOwner": "Only the GM or whoever opened the pot can settle it.",
+      "NoWinner": "Name at least one winner."
+    },
+    "Haggle": {
+      "Success": "Haggling at {shop}: success, −{pct}% on prices.",
+      "Offended": "Haggling at {shop}: the merchant is offended, +{pct}% on prices.",
+      "Nothing": "Haggling at {shop}: the merchant won't budge (DC {dc})."
+    },
+    "History": {
+      "Title": "History",
+      "All": "Full history",
+      "AllMine": "All my characters",
+      "Empty": "No transactions yet.",
+      "More": "Show more ({n} left)",
+      "Export": "Export to CSV",
+      "Clear": "Clear history",
+      "ConfirmClear": "Erase the whole transaction history?",
+      "OtiumOrder": "{name} orders at {tavern}: {items}",
+      "Tavern": "the tavern"
+    },
+    "Pot": {
+      "Default": "Pot"
     }
   }
 }

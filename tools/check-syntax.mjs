@@ -59,7 +59,7 @@ for (const k of fr) if (!en.has(k)) fail(`clé absente de en.json : ${k}`);
 for (const k of en) if (!fr.has(k)) fail(`clé absente de fr.json : ${k}`);
 
 const used = new Set();
-const prefixes = "Common|Controls|Settings|Preset|Wallet|Shop|Editor|Ledger|Currencies|Chat|Notify|Error";
+const prefixes = "Common|Controls|Settings|Preset|Wallet|Shop|Editor|Ledger|Currencies|Chat|Notify|Error|History|Haggle|Pot";
 for (const f of files) {
   const src = readFileSync(f, "utf8");
   for (const m of src.matchAll(new RegExp(`"(?:MINT\\.)?((?:${prefixes})\\.[A-Za-z.]+)"`, "g"))) used.add(`MINT.${m[1]}`);
@@ -70,6 +70,15 @@ for (const k of used) if (!fr.has(k)) fail(`clé utilisée mais non traduite : $
 for (const k of ["active", "proposed", "closed"]) {
   for (const p of ["MINT.Ledger.Tab.", "MINT.Ledger.Empty."]) if (!fr.has(p + k)) fail(`clé dynamique absente : ${p + k}`);
 }
+const dynamic = [
+  ...["shop", "items", "customers"].map((k) => `MINT.Editor.Tab.${k}`),
+  ...["unlimited", "fixed", "merchant"].map((k) => `MINT.Editor.Till.${k}`),
+  ...["Success", "Offended", "Nothing"].map((k) => `MINT.Haggle.${k}`),
+  ...["ChatLog", "HistorySize", "MerchantDoubleClick", "MerchantRange", "HaggleFormula", "DueReminderDays", "OtiumHistory"].flatMap(
+    (k) => [`MINT.Settings.${k}.Name`, `MINT.Settings.${k}.Hint`]
+  )
+];
+for (const k of dynamic) if (!fr.has(k)) fail(`clé dynamique absente : ${k}`);
 for (const r of ["repaid", "forgiven", "cancelled", "refused", "withdrawn"]) {
   if (!fr.has(`MINT.Ledger.Closed.${r}`)) fail(`clé dynamique absente : MINT.Ledger.Closed.${r}`);
 }

@@ -444,3 +444,151 @@
   color: #3fae8c;
   margin-right: 0.2rem;
 }
+
+/* Marchands, réputation et marchandage ------------------------------------ */
+
+.mint .mint-merchant {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border: 2px solid var(--mint-border);
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.mint .mint-merchant-pick .mint-merchant {
+  width: 40px;
+  height: 40px;
+}
+
+.mint .mint-merchant-empty {
+  width: 40px;
+  text-align: center;
+  font-size: 1.6em;
+}
+
+.mint .mint-customer {
+  flex-wrap: wrap;
+}
+
+.mint .mint-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 1em;
+  font-size: 0.9em;
+  border: 1px solid currentColor;
+}
+
+.mint .mint-tag.good {
+  color: var(--mint-down);
+}
+
+.mint .mint-tag.bad {
+  color: var(--mint-up);
+}
+
+.mint .mint-haggle {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.mint-shop-editor h3 {
+  margin: 0.8rem 0 0.3rem;
+  border-bottom: 1px solid var(--mint-border);
+}
+
+.mint-shop-editor .mint-editor-settings,
+.mint-shop-editor .mint-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Échéances --------------------------------------------------------------- */
+
+.mint-ledger .mint-due {
+  margin-left: 0.4rem;
+  padding: 0 0.45rem;
+  border-radius: 1em;
+  font-size: 0.85em;
+  background: var(--mint-accent-soft);
+  white-space: nowrap;
+}
+
+.mint-ledger .mint-due.soon {
+  background: color-mix(in srgb, #c9a227 25%, transparent);
+}
+
+.mint-ledger .mint-due.late {
+  background: color-mix(in srgb, var(--mint-up) 30%, transparent);
+  font-weight: bold;
+}
+
+/* Historique -------------------------------------------------------------- */
+
+.mint .mint-recent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.9em;
+  color: var(--mint-muted);
+}
+
+.mint .mint-recent li {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.1rem 0;
+}
+
+.mint .mint-recent li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mint-history .mint-history {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mint-history .mint-history-row {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr auto;
+  grid-template-areas: "icon text amount" "icon date date";
+  gap: 0 0.5rem;
+  padding: 0.35rem 0.2rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--mint-border) 50%, transparent);
+}
+
+.mint-history .mint-history-row > i {
+  grid-area: icon;
+  color: var(--mint-accent);
+  padding-top: 0.15rem;
+}
+
+.mint-history .mint-history-text {
+  grid-area: text;
+}
+
+.mint-history .mint-history-amount {
+  grid-area: amount;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mint-history .mint-history-row time {
+  grid-area: date;
+  font-size: 0.8em;
+}
+
+.mint-history .mint-history-overdue > i {
+  color: var(--mint-up);
+}

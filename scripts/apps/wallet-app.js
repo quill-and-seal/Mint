@@ -7,10 +7,12 @@ import { t, esc } from "../constants.js";
 import { getConfig, denoms, format, parse, coinDot } from "../currencies.js";
 import { walletValue, count } from "../core/money.js";
 import { getWallet, walletApi, ownedActors, defaultActor, giftTargets } from "../wallet.js";
-import { MintApp, formDialog, options } from "./base.js";
+import { historyFor } from "../history.js";
+import { MintApp, formDialog, options, openApps } from "./base.js";
+import { HistoryApp } from "./history-app.js";
 
 export class WalletApp extends MintApp {
-  static watches = ["wallet", "currencies"];
+  static watches = ["wallet", "currencies", "history"];
 
   constructor(actor = null, options = {}) {
     super(options);
@@ -25,7 +27,8 @@ export class WalletApp extends MintApp {
     actions: {
       give: WalletApp.#onGive,
       exchange: WalletApp.#onExchange,
-      consolidate: WalletApp.#onConsolidate
+      consolidate: WalletApp.#onConsolidate,
+      history: WalletApp.#onHistory
     }
   };
 
@@ -95,12 +98,21 @@ export class WalletApp extends MintApp {
       })
       .join("");
 
+    const recent = historyFor(actor).slice(0, 4);
+    const recentHtml = recent.length
+      ? `<ul class="mint-recent">${recent
+          .map((e) => `<li><i class="fa-solid ${esc(e.icon || "fa-coins")}"></i> <span>${esc(e.text)}</span></li>`)
+          .join("")}</ul>`
+      : "";
+
     return `
       ${picker}
       ${blocks}
+      ${recentHtml}
       <footer class="mint-actions">
         <button type="button" data-action="give"><i class="fa-solid fa-hand-holding-dollar"></i> ${t("Wallet.Give")}</button>
         ${systems.length > 1 ? `<button type="button" data-action="exchange"><i class="fa-solid fa-scale-balanced"></i> ${t("Wallet.Exchange")}</button>` : ""}
+        <button type="button" data-action="history"><i class="fa-solid fa-clock-rotate-left"></i> ${t("History.Title")}</button>
       </footer>`;
   }
 
@@ -186,6 +198,14 @@ export class WalletApp extends MintApp {
       if (amount === null || !(amount > 0)) return ui.notifications.warn(t("Error.BadAmount"));
     }
     await this.attempt(() => walletApi.exchange(actor.uuid, data.from, data.to, amount));
+  }
+
+  static #onHistory() {
+    const open = [...openApps].find((a) => a instanceof HistoryApp);
+    if (open) {
+      open.filter = this.actorUuid ?? "";
+      open.render({ force: true });
+    } else new HistoryApp(this.actor).render({ force: true });
   }
 
   static async #onConsolidate(event, target) {

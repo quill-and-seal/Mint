@@ -6,7 +6,7 @@
 
 import { t, esc, worldTime } from "../constants.js";
 import { getConfig, format, parse, defaultSystemId } from "../currencies.js";
-import { visibleDebts, owed, userHasSide, debtApi } from "../debts.js";
+import { visibleDebts, owed, userHasSide, debtApi, daysLeft, overdue } from "../debts.js";
 import { ownedActors, giftTargets } from "../wallet.js";
 import { MintApp, formDialog, confirmDialog, options } from "./base.js";
 
@@ -95,6 +95,17 @@ export class LedgerApp extends MintApp {
       status = t(`Ledger.Closed.${d.closedReason ?? "cancelled"}`);
     } else {
       status = t("Ledger.Left", { amount: esc(format(left, d.system)) });
+      const days = daysLeft(d, now);
+      if (days !== null) {
+        const late = overdue(d, now);
+        const label = late
+          ? t("Ledger.Overdue", { days: Math.max(1, -days) })
+          : days <= 0
+            ? t("Ledger.DueToday")
+            : t("Ledger.DueIn", { days });
+        const tip = d.lateFee ? t("Ledger.LateFeeHint", { pct: d.lateFee }) : "";
+        status += ` <span class="mint-due ${late ? "late" : days <= 1 ? "soon" : ""}" ${tip ? `data-tooltip="${esc(tip)}"` : ""}><i class="fa-solid fa-hourglass-half"></i> ${esc(label)}</span>`;
+      }
     }
 
     return `
@@ -161,6 +172,9 @@ export class LedgerApp extends MintApp {
         <div class="form-group"><label>${t("Ledger.Rate")}</label>
           <div class="form-fields"><input type="number" name="rate" min="0" step="0.5" value="0"><span>%</span>
           <span>${t("Ledger.Every")}</span><input type="number" name="periodDays" min="0" step="1" value="7"><span>${t("Ledger.Days")}</span></div></div>
+        <div class="form-group"><label data-tooltip="${esc(t("Ledger.DueHint"))}">${t("Ledger.Due")}</label>
+          <div class="form-fields"><input type="number" name="dueDays" min="0" step="1" value="0"><span>${t("Ledger.Days")}</span>
+          <span>${t("Ledger.LateFee")}</span><input type="number" name="lateFee" min="0" step="1" value="0"><span>%</span></div></div>
         <div class="form-group"><label>${t("Ledger.Transfer")}</label><input type="checkbox" name="transfer" checked></div>
         <p class="hint">${t("Ledger.TransferHint")}</p>
         <div class="form-group"><label>${t("Ledger.Note")}</label><input type="text" name="note"></div>`
@@ -183,7 +197,8 @@ export class LedgerApp extends MintApp {
     }
     const payload = {
       creditor, debtor, principal, system,
-      rate: data.rate, periodDays: data.periodDays, transfer: !!data.transfer, note: data.note
+      rate: data.rate, periodDays: data.periodDays, dueDays: data.dueDays, lateFee: data.lateFee,
+      transfer: !!data.transfer, note: data.note
     };
     const result = await this.attempt(() => (gm ? debtApi.impose(payload) : debtApi.propose(payload)));
     if (result) {

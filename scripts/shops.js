@@ -352,6 +352,13 @@ registerHandler("shop.sell", async ({ shopId, entryId, actorUuid, itemId, qty },
   return { total };
 });
 
+/** Formule du jet de marchandage (réglage ; vide = Persuasion pour dnd5e, 1d20 sinon). */
+export function haggleFormula() {
+  const value = String(game.settings.get(MODULE_ID, SETTINGS.haggleFormula) ?? "").trim();
+  if (value) return value;
+  return game.system.id === "dnd5e" ? "1d20 + @skills.per.total" : "1d20";
+}
+
 /** Marchandage : le jet est fait par le MJ (formule du réglage, données de l'acteur). */
 registerHandler("shop.haggle", async ({ shopId, actorUuid }, user) => {
   const actor = await resolveActor(actorUuid);
@@ -362,7 +369,7 @@ registerHandler("shop.haggle", async ({ shopId, actorUuid }, user) => {
   const now = worldTime();
   if (activeHaggle(shop, actor.uuid, now)) throw new MintError("AlreadyHaggled", { shop: shop.name });
 
-  const formula = String(game.settings.get(MODULE_ID, SETTINGS.haggleFormula) || "1d20").trim();
+  const formula = haggleFormula();
   let roll;
   try {
     roll = await new Roll(formula, actor.getRollData?.() ?? {}).evaluate();

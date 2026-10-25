@@ -113,7 +113,8 @@ globalThis.ui = { notifications: { info: (m) => notes.push(["info", m]), warn: (
 globalThis.Hooks = {
   on: (n, f) => (hooks[n] ??= []).push(f),
   once: (n, f) => (hooks[n] ??= []).push(f),
-  call: (n, ...a) => (hooks[n] ?? []).forEach((f) => f(...a))
+  call: (n, ...a) => (hooks[n] ?? []).forEach((f) => f(...a)),
+  callAll: (n, ...a) => (hooks[n] ?? []).forEach((f) => f(...a))
 };
 globalThis.ChatMessage = {
   create: async (d) => chat.push(d),
@@ -123,6 +124,29 @@ globalThis.ChatMessage = {
 globalThis.fromUuid = async (u) => docs.get(u) ?? null;
 globalThis.fromUuidSync = (u) => docs.get(u) ?? null;
 globalThis.canvas = { tokens: { controlled: [] }, scene: { tokens: [] } };
+// Jet de dés factice : le total est réglé par le test
+let nextRoll = 10;
+globalThis.Roll = class {
+  constructor(formula, data) {
+    this.formula = formula;
+    this.data = data;
+  }
+  async evaluate() {
+    this.total = nextRoll;
+    return this;
+  }
+  async toMessage(d) {
+    chat.push({ roll: this.total, ...d });
+  }
+};
+class FakeToken {
+  constructor(actor, x, y) {
+    Object.assign(this, { actor, actorId: actor.id, actorLink: true, x, y, width: 1, height: 1 });
+  }
+}
+const sceneTokens = [];
+sceneTokens.find = Array.prototype.find;
+globalThis.CONFIG = { Token: { objectClass: class { _canView() { return false; } _onClickLeft2() { return "sheet"; } } } };
 
 const fr = JSON.parse(readFileSync(new URL("../lang/fr.json", import.meta.url)));
 const localize = (k) => getProperty(fr, k) ?? k;
@@ -133,7 +157,8 @@ globalThis.game = {
   system: { id: "dnd5e" },
   time: { worldTime: 0 },
   actors: new Collection(),
-  modules: new Map([["mint-economy", {}]]),
+  modules: new Map([["mint-economy", {}], ["otium", { active: true }]]),
+  scenes: [{ tokens: sceneTokens, grid: { size: 100, distance: 5 } }],
   i18n: {
     localize,
     format: (k, d) => localize(k).replace(/\{(\w+)\}/g, (_, x) => d[x]),
@@ -172,13 +197,14 @@ globalThis.game = {
 
 class ApplicationV2 {}
 globalThis.foundry = {
-  utils: { getProperty, setProperty, hasProperty, deepClone, randomID, expandObject },
+  utils: { getProperty, setProperty, hasProperty, deepClone, randomID, expandObject, saveDataToFile: () => {} },
   applications: { api: { ApplicationV2, DialogV2: {} }, ux: { TextEditor: { implementation: {} } }, apps: { FilePicker: {} } }
 };
 
 /* ---------- chargement ---------- */
 await import("../scripts/main.js");
 Hooks.call("init");
+Hooks.call("setup");
 Hooks.call("ready");
 const api = game.modules.get("mint-economy").api;
 assert.ok(api, "API publiée");
@@ -308,6 +334,127 @@ game.user = bob;
 await api.debt.forgive(iou.id);
 assert.equal(api.getDebts()[iou.id].closedReason, "forgiven");
 
+/* ---------- 0.2 : historique ---------- */
+const hist = api.history.get();
+assert.ok(hist.length >= 8, "transactions inscrites à l'historique");
+assert.ok(api.history.for(heroA).some((e) => e.type === "buy" && e.amount === 108), "achat dans l'historique d'Aria");
+assert.ok(hist[0].ts >= hist.at(-1).ts, "historique du plus récent au plus ancien");
+
+/* ---------- 0.2 : marchand sur la scène, caisse = bourse du marchand ---------- */
+game.user = gm;
+const { getShop: shopNow } = await import("../scripts/shops.js");
+await saveShop({ ...shopNow(shop.id), merchant: merchant.uuid, till: "merchant" });
+assert.equal(api.shopForActor(merchant)?.id, shop.id, "boutique retrouvée depuis le marchand");
+game.user = alice;
+heroA.system.currency.gp = 20;
+const merchantBefore = value(merchant);
+const r2 = await api.shop.buy(shop.id, entry.id, heroA.uuid, 1);
+assert.equal(value(merchant), merchantBefore + r2.total, "l'achat enrichit le marchand");
+// Le marchand ne peut racheter que ce qu'il a en bourse
+game.user = gm;
+await api.wallet.set(merchant.uuid, { pp: 0, po: 0, pe: 0, pa: 0, pc: 3, ryo: 0 });
+game.user = alice;
+const potionA = heroA.items.find((i) => i.name === "Potion de soins");
+await assert.rejects(api.shop.sell(shop.id, entry.id, heroA.uuid, potionA.id, 1), (e) => e.key === "ShopBroke");
+
+// Double-clic : un joueur peut « voir » le token d'un marchand ouvert
+const tokenProto = CONFIG.Token.objectClass.prototype;
+assert.equal(tokenProto._canView.call({ actor: merchant }, alice), true, "token du marchand ouvrable");
+assert.equal(tokenProto._canView.call({ actor: heroB }, alice), false, "autre token inchangé");
+
+/* ---------- 0.2 : réputation ---------- */
+game.user = gm;
+const fullPrice = api.shop.price(shop.id, entry.id, heroA.uuid);
+await saveShop({ ...shopNow(shop.id), customers: { [heroA.uuid]: -10 } });
+const repPrice = api.shop.price(shop.id, entry.id, heroA.uuid);
+assert.ok(Math.abs(repPrice - fullPrice * 0.9) <= 1, `réputation : 10 % de remise (${repPrice} / ${fullPrice})`);
+assert.equal(api.shop.price(shop.id, entry.id, heroB.uuid), fullPrice, "les autres paient le prix normal");
+
+/* ---------- 0.2 : marchandage ---------- */
+game.user = alice;
+await assert.rejects(api.shop.haggle(shop.id, heroA.uuid), (e) => e.key === "NoHaggle");
+game.user = gm;
+await saveShop({ ...shopNow(shop.id), haggle: { enabled: true, dc: 15, maxDiscount: 20, penalty: 10, hours: 24 } });
+game.user = alice;
+nextRoll = 20;
+const h1 = await api.shop.haggle(shop.id, heroA.uuid);
+assert.equal(h1.pct, -10, "marchandage réussi de 5 : −10 %");
+assert.ok(chat.some((c) => c.roll === 20), "jet de marchandage affiché dans le chat");
+await assert.rejects(api.shop.haggle(shop.id, heroA.uuid), (e) => e.key === "AlreadyHaggled");
+assert.ok(Math.abs(api.shop.price(shop.id, entry.id, heroA.uuid) - fullPrice * 0.8) <= 1, "réputation + marchandage cumulés");
+game.time.worldTime += 25 * 3600;
+nextRoll = 5;
+const h2 = await api.shop.haggle(shop.id, heroA.uuid);
+assert.equal(h2.pct, 10, "jet raté de 10 : marchand vexé");
+
+/* ---------- 0.2 : distance au marchand ---------- */
+game.user = gm;
+await game.settings.set("mint-economy", "merchantRange", 10);
+sceneTokens.push(new FakeToken(merchant, 0, 0), new FakeToken(heroA, 1000, 0));
+game.user = alice;
+await assert.rejects(api.shop.buy(shop.id, service.id, heroA.uuid, 1), (e) => e.key === "TooFar");
+sceneTokens[1].x = 100; // une case = 5 unités
+await api.shop.buy(shop.id, service.id, heroA.uuid, 1);
+game.user = gm;
+await game.settings.set("mint-economy", "merchantRange", 0);
+
+/* ---------- 0.2 : échéances, pénalité, rappels ---------- */
+const due = await api.debt.impose({ creditor: { uuid: null, name: "Usurier" }, debtor: { uuid: heroB.uuid }, principal: 100, dueDays: 3, lateFee: 10 });
+const tick = async (seconds) => {
+  game.time.worldTime += seconds;
+  for (const f of hooks.updateWorldTime ?? []) await f(game.time.worldTime);
+};
+assert.equal(api.debt.daysLeft(api.getDebts()[due.id]), 3);
+await tick(2 * 86400 + 60);
+assert.equal(api.getDebts()[due.id].reminded.soon, true, "rappel la veille de l'échéance");
+assert.equal(api.getDebts()[due.id].reminded.overdue, false);
+await tick(2 * 86400);
+const lateDebt = api.getDebts()[due.id];
+assert.equal(lateDebt.reminded.overdue, true, "rappel de retard");
+assert.equal(api.debt.overdue(lateDebt), true);
+assert.equal(api.debt.owed(lateDebt), 110, "pénalité de retard de 10 %");
+assert.ok(api.history.get().some((e) => e.type === "overdue"), "retard inscrit à l'historique");
+
+/* ---------- 0.2 : paiements pour les autres modules et cagnottes ---------- */
+game.user = alice;
+heroA.system.currency.gp = 10;
+heroB.system.currency.gp = 10;
+const vA2 = value(heroA);
+await api.pay(heroA, 5, { reason: "Péage", source: "macro" });
+assert.equal(value(heroA), vA2 - 5);
+await assert.rejects(api.receive(heroA, 5), (e) => e.key === "GMOnly");
+const pot = await api.pot.create({ label: "Dés du menteur", source: "otium" });
+await api.pot.stake(pot.id, heroA, 100);
+game.user = bob;
+await api.pot.stake(pot.id, heroB, 200);
+assert.equal(api.pot.total(pot.id), 300);
+await assert.rejects(api.pot.settle(pot.id, [heroB]), (e) => e.key === "NotPotOwner");
+game.user = alice;
+const vB = value(heroB);
+await api.pot.settle(pot.id, [heroB]);
+assert.equal(value(heroB), vB + 300, "le gagnant remporte la cagnotte");
+assert.equal(api.pot.get(pot.id).status, "settled");
+await assert.rejects(api.pot.stake(pot.id, heroA, 10), (e) => e.key === "PotClosed");
+// Cagnotte remboursée
+const pot2 = await api.pot.create({ label: "Bras de fer" });
+const vA3 = value(heroA);
+await api.pot.stake(pot2.id, heroA, 50);
+await api.pot.refund(pot2.id);
+assert.equal(value(heroA), vA3, "mise rendue");
+game.user = gm;
+await api.receive(heroA, 7, { reason: "Pourboire" });
+assert.equal(value(heroA), vA3 + 7);
+
+/* ---------- 0.2 : pont Otium ---------- */
+game.user = alice;
+Hooks.call("otium.orderPlaced", { actor: heroA, tavern: { name: "Le Gué" }, lines: [{ item: { name: "Bière" }, qty: 2 }], total: 8 });
+await new Promise((r) => setTimeout(r, 20));
+const otiumEntry = api.history.get().find((e) => e.type === "otium");
+assert.ok(otiumEntry, "commande Otium inscrite à l'historique");
+assert.equal(otiumEntry.amount, 8);
+assert.match(otiumEntry.text, /Le Gué/);
+game.user = gm;
+
 assert.ok(chat.length >= 6, "transactions annoncées dans le chat");
-assert.ok(chat.every((c) => c.whisper?.includes("gm")), "chat en privé au MJ par défaut");
+assert.ok(chat.filter((c) => c.roll === undefined).every((c) => c.whisper?.includes("gm")), "transactions en privé au MJ par défaut");
 console.log(`OK — test de fumée réussi (${chat.length} messages de chat, ${notes.length} notifications).`);

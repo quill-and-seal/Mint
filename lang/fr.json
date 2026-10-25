@@ -21,6 +21,30 @@
         "Name": "Monnaies",
         "Label": "Configurer les monnaies",
         "Hint": "Systèmes monétaires, devises, taux de change, frais du changeur et lien avec la fiche du système de jeu."
+      },
+      "HistorySize": {
+        "Name": "Taille de l'historique",
+        "Hint": "Nombre de transactions gardées dans l'historique (les plus anciennes sont effacées). 0 = pas d'historique."
+      },
+      "MerchantDoubleClick": {
+        "Name": "Double-clic sur les marchands",
+        "Hint": "Un double-clic sur le token d'un marchand ouvre sa boutique pour les joueurs. Le MJ ouvre la fiche, ou la boutique avec Alt + double-clic."
+      },
+      "MerchantRange": {
+        "Name": "Distance aux marchands",
+        "Hint": "Distance maximale (unités de la grille) entre un personnage et le token du marchand pour acheter ou vendre. 0 = pas de limite."
+      },
+      "HaggleFormula": {
+        "Name": "Jet de marchandage",
+        "Hint": "Formule du jet, avec les données du personnage (ex. 1d20 + @skills.per.total). Vide = Persuasion pour dnd5e, 1d20 pour les autres systèmes."
+      },
+      "DueReminderDays": {
+        "Name": "Rappel avant échéance",
+        "Hint": "Prévenir les parties d'une dette ce nombre de jours avant l'échéance (temps du monde). 0 = seulement à l'échéance."
+      },
+      "OtiumHistory": {
+        "Name": "Commandes Otium dans l'historique",
+        "Hint": "Inscrit les commandes passées dans les tavernes d'Otium dans l'historique de Mint."
       }
     },
     "Preset": {
@@ -93,7 +117,18 @@
       "NothingToSell": "Rien que ce marchand rachète.",
       "SellHint": "Le marchand rachète à {ratio} % de son prix.",
       "ConfirmBuy": "{name} achète {qty} × {item} pour {amount} ?",
-      "ConfirmSell": "Vendre {qty} × {item} pour {amount} ?"
+      "ConfirmSell": "Vendre {qty} × {item} pour {amount} ?",
+      "OpenMerchant": "Boutique",
+      "HeldBy": "Tenue par {name}",
+      "Discount": "Remise de {pct} %",
+      "Markup": "Majoration de {pct} %",
+      "ReputationHint": "Ta réputation auprès de cette boutique",
+      "Haggle": "Marchander",
+      "HaggleHint": "Tenter de faire baisser les prix (difficulté {dc})",
+      "HaggleDone": "Déjà marchandé ici : attends que l'effet se dissipe",
+      "HaggleWon": "Marchandage : −{pct} %",
+      "HaggleLost": "Marchand vexé : +{pct} %",
+      "HaggleLasts": "Encore environ {hours} h"
     },
     "Editor": {
       "Title": "Boutique — {name}",
@@ -129,7 +164,43 @@
       "Modifier": "×",
       "ModifierHint": "Multiplicateur propre à l'article.",
       "Buyback": "Rachat",
-      "BuybackHint": "Le marchand rachète cet article."
+      "BuybackHint": "Le marchand rachète cet article.",
+      "Tab": {
+        "shop": "Boutique",
+        "items": "Articles",
+        "customers": "Clientèle"
+      },
+      "Merchant": "Marchand",
+      "NoMerchant": "— Aucun marchand —",
+      "MerchantHint": "Glisse un acteur ou un token dans cette fenêtre pour en faire le marchand. Un double-clic sur son token ouvre la boutique pour les joueurs.",
+      "MerchantSet": "{name} tient désormais {shop}.",
+      "UnlinkMerchant": "Retirer le marchand",
+      "Prices": "Prix et réassort",
+      "TillMode": "Caisse",
+      "TillHint": "Ce que le marchand peut payer quand on lui revend des objets.",
+      "Till": {
+        "unlimited": "Illimitée",
+        "fixed": "Montant fixe",
+        "merchant": "Bourse du marchand"
+      },
+      "TillNoMerchant": "Choisis un marchand : sa bourse sert de caisse.",
+      "Haggle": "Marchandage",
+      "HaggleEnabled": "Autoriser le marchandage",
+      "HaggleDC": "Difficulté",
+      "HaggleDCHint": "Résultat à atteindre au jet de marchandage.",
+      "HaggleMax": "Remise max (%)",
+      "HaggleMaxHint": "Une réussite donne 5 % de remise, plus 1 % par point au-dessus de la difficulté, jusqu'à ce plafond.",
+      "HagglePenalty": "Vexation (%)",
+      "HagglePenaltyHint": "Majoration quand le jet rate de 5 ou plus.",
+      "HaggleHours": "Durée (heures)",
+      "HaggleHoursHint": "Combien de temps (temps du monde) le résultat dure avant de pouvoir remarchander.",
+      "HaggleFormula": "Jet utilisé : <code>{formula}</code> (réglages du module).",
+      "ClearHaggles": "Oublier les marchandages en cours",
+      "Reputation": "Réputation",
+      "ReputationHint": "Ajustement des prix pour chaque personnage : −10 = 10 % de remise (et revente 10 % plus chère), +20 = 20 % plus cher.",
+      "PriceAdjust": "Ajustement",
+      "HaggleCurrent": "Marchandage en cours",
+      "NoCharacters": "Aucun personnage de joueur."
     },
     "Ledger": {
       "Title": "Prêts et dettes",
@@ -181,7 +252,14 @@
         "cancelled": "Annulée",
         "refused": "Refusée",
         "withdrawn": "Retirée"
-      }
+      },
+      "Due": "Échéance",
+      "DueHint": "Nombre de jours (temps du monde) pour rembourser. 0 = pas d'échéance.",
+      "LateFee": "pénalité",
+      "LateFeeHint": "Pénalité de retard : {pct} % du capital",
+      "DueIn": "échéance dans {days} j",
+      "DueToday": "échéance aujourd'hui",
+      "Overdue": "en retard de {days} j"
     },
     "Currencies": {
       "Title": "Monnaies",
@@ -223,7 +301,13 @@
       "Loan": "<strong>{creditor}</strong> prête {amount} à <strong>{debtor}</strong>.",
       "Debt": "<strong>{debtor}</strong> doit {amount} à <strong>{creditor}</strong>.",
       "Repay": "<strong>{debtor}</strong> rembourse {amount} à <strong>{creditor}</strong> (reste {left}).",
-      "Forgive": "<strong>{creditor}</strong> efface la dette de <strong>{debtor}</strong>."
+      "Forgive": "<strong>{creditor}</strong> efface la dette de <strong>{debtor}</strong>.",
+      "Overdue": "La dette de <strong>{debtor}</strong> envers <strong>{creditor}</strong> est en retard (reste {amount}).",
+      "Pay": "<strong>{name}</strong> paie {amount}. {reason}",
+      "Receive": "<strong>{name}</strong> reçoit {amount}. {reason}",
+      "Stake": "<strong>{name}</strong> mise {amount} ({pot}).",
+      "Settle": "{pot} : {winners} remporte la mise.",
+      "Refund": "{pot} : les mises sont rendues."
     },
     "Notify": {
       "Proposal": "{from} te propose une dette de {amount} : ouvre Prêts et dettes pour répondre.",
@@ -231,7 +315,9 @@
       "Accepted": "{name} a accepté la dette de {amount}.",
       "Refused": "{name} a refusé la dette de {amount}.",
       "Repaid": "{name} t'a remboursé {amount}.",
-      "Forgiven": "{name} a effacé ta dette."
+      "Forgiven": "{name} a effacé ta dette.",
+      "DueSoon": "Échéance dans {days} j : {debtor} doit encore {amount} à {creditor}.",
+      "Overdue": "Dette en retard : {debtor} doit encore {amount} à {creditor}."
     },
     "Error": {
       "Unexpected": "Mint : erreur inattendue (détails dans la console).",
@@ -260,7 +346,34 @@
       "NoParty": "Il manque le nom d'une des parties.",
       "NotParty": "Tu n'es pas concerné par cette dette.",
       "NotPending": "Cette proposition n'est plus en attente.",
-      "NotActive": "Cette dette n'est plus en cours."
+      "NotActive": "Cette dette n'est plus en cours.",
+      "TooFar": "Approche-toi de {name} pour commercer.",
+      "NoHaggle": "On ne marchande pas chez {shop}.",
+      "AlreadyHaggled": "Tu as déjà marchandé chez {shop} : reviens plus tard.",
+      "NoPot": "Cette cagnotte n'existe plus.",
+      "PotClosed": "Cette cagnotte est déjà réglée.",
+      "NotPotOwner": "Seul le MJ ou celui qui a ouvert la cagnotte peut la régler.",
+      "NoWinner": "Indique au moins un gagnant."
+    },
+    "Haggle": {
+      "Success": "Marchandage chez {shop} : réussi, −{pct} % sur les prix.",
+      "Offended": "Marchandage chez {shop} : le marchand est vexé, +{pct} % sur les prix.",
+      "Nothing": "Marchandage chez {shop} : le marchand ne cède rien (difficulté {dc})."
+    },
+    "History": {
+      "Title": "Historique",
+      "All": "Tout l'historique",
+      "AllMine": "Tous mes personnages",
+      "Empty": "Aucune transaction pour l'instant.",
+      "More": "Afficher plus ({n} restantes)",
+      "Export": "Exporter en CSV",
+      "Clear": "Vider l'historique",
+      "ConfirmClear": "Effacer tout l'historique des transactions ?",
+      "OtiumOrder": "{name} commande à {tavern} : {items}",
+      "Tavern": "la taverne"
+    },
+    "Pot": {
+      "Default": "Cagnotte"
     }
   }
 }
