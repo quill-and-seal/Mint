@@ -24,8 +24,11 @@ export function priceFactor(stock, target, elasticity, minFactor, maxFactor) {
   return Math.min(Math.max(f, minFactor), maxFactor);
 }
 
-/** Prix d'une unité quand le stock vaut `stock` (par défaut, le stock actuel). */
-export function unitPrice(item, shop = {}, stock = item.stock) {
+/**
+ * Prix d'une unité quand le stock vaut `stock` (par défaut, le stock actuel).
+ * `factor` : ajustement propre au client (réputation, marchandage), voir customerFactors.
+ */
+export function unitPrice(item, shop = {}, stock = item.stock, factor = 1) {
   const base = Math.max(0, num(item.price, 0));
   if (!base) return 0;
   const f = priceFactor(
@@ -37,25 +40,25 @@ export function unitPrice(item, shop = {}, stock = item.stock) {
   );
   const markup = 1 + num(shop.markup, PRICING_DEFAULTS.markup);
   const modifier = num(item.modifier, 1);
-  return Math.max(1, Math.round(base * f * markup * modifier));
+  return Math.max(1, Math.round(base * f * markup * modifier * num(factor, 1)));
 }
 
 /** Prix total pour acheter `qty` unités : chaque unité achetée fait monter la suivante. */
-export function buyTotal(item, shop, qty) {
+export function buyTotal(item, shop, qty, factor = 1) {
   const n = Math.max(0, Math.floor(qty));
-  if (item.stock === null || item.stock === undefined) return unitPrice(item, shop) * n;
+  if (item.stock === null || item.stock === undefined) return unitPrice(item, shop, null, factor) * n;
   let total = 0;
-  for (let i = 0; i < n; i++) total += unitPrice(item, shop, item.stock - i);
+  for (let i = 0; i < n; i++) total += unitPrice(item, shop, item.stock - i, factor);
   return total;
 }
 
 /** Somme payée par la boutique pour `qty` unités revendues : chaque unité fait baisser la suivante. */
-export function sellTotal(item, shop, qty) {
+export function sellTotal(item, shop, qty, factor = 1) {
   const n = Math.max(0, Math.floor(qty));
   const ratio = num(shop.sellRatio, PRICING_DEFAULTS.sellRatio);
   const unlimited = item.stock === null || item.stock === undefined;
   let total = 0;
-  for (let i = 0; i < n; i++) total += unitPrice(item, shop, unlimited ? null : item.stock + i + 1) * ratio;
+  for (let i = 0; i < n; i++) total += unitPrice(item, shop, unlimited ? null : item.stock + i + 1, factor) * ratio;
   return Math.floor(total);
 }
 
@@ -71,4 +74,31 @@ export function restockStock(item, intervals) {
   if (stock < target) return Math.min(target, stock + step);
   if (stock > target) return Math.max(target, stock - step);
   return stock;
+}
+
+/**
+ * Ajustements de prix propres à un client, en % (négatif = moins cher pour lui) :
+ * réputation auprès de la boutique + résultat d'un marchandage.
+ * Retourne les facteurs à l'achat et à la revente (un bon client achète moins cher
+ * et revend plus cher).
+ */
+export function customerFactors(adjustments = []) {
+  const pct = adjustments.reduce((sum, v) => sum + (Number(v) || 0), 0);
+  return {
+    pct,
+    buy: Math.min(Math.max(1 + pct / 100, 0.1), 3),
+    sell: Math.min(Math.max(1 - pct / 100, 0), 2)
+  };
+}
+
+/**
+ * Résultat d'un marchandage, en % d'ajustement du prix.
+ * Réussite (total ≥ difficulté) : 5 % de remise + 1 % par point au-dessus, plafonnée.
+ * Échec de 5 ou plus : le marchand, vexé, majore ses prix. Sinon, rien ne change.
+ */
+export function haggleOutcome(total, dc, { maxDiscount = 20, penalty = 10 } = {}) {
+  const margin = Math.floor(Number(total) || 0) - Math.floor(Number(dc) || 0);
+  if (margin >= 0) return -Math.min(Math.max(0, maxDiscount), 5 + margin);
+  if (margin <= -5) return Math.max(0, penalty);
+  return 0;
 }

@@ -12,13 +12,15 @@
  *   awaiting   : "creditor" | "debtor" (partie qui doit accepter une proposition)
  *   proposedBy : id de l'utilisateur, imposed : créée par le MJ
  *   start      : temps du monde au début du prêt (intérêts), repaid : déjà remboursé
+ *   dueDays    : échéance, en jours après le début (0 = aucune) ; lateFee : pénalité de retard (% du capital)
+ *   reminded   : { soon, overdue } rappels déjà envoyés
  *   note, createdAt, closedAt
  * }
  */
 
 import { MODULE_ID, SETTINGS, MintError, t, esc, worldTime, secondsPerDay } from "./constants.js";
 import { getSystem, defaultSystemId, format } from "./currencies.js";
-import { amountOwed } from "./core/interest.js";
+import { amountOwed, daysUntilDue, isOverdue, dueTime } from "./core/interest.js";
 import { registerHandler, gmCall, notifyUsers } from "./socket.js";
 import { resolveActor, userOwns, playerOwners, chargeActor, creditActor } from "./wallet.js";
 import { logTransaction } from "./chat.js";
@@ -35,9 +37,18 @@ async function saveDebts(debts) {
   await game.settings.set(MODULE_ID, SETTINGS.debts, debts);
 }
 
-/** Reste à payer d'une dette (intérêts compris), en unités de base de son système. */
+/** Reste à payer d'une dette (intérêts et pénalité compris), en unités de base de son système. */
 export function owed(debt, now = worldTime()) {
   return amountOwed(debt, now, secondsPerDay());
+}
+
+/** Jours avant l'échéance (négatif = retard), null sans échéance. */
+export function daysLeft(debt, now = worldTime()) {
+  return daysUntilDue(debt, now, secondsPerDay());
+}
+
+export function overdue(debt, now = worldTime()) {
+  return debt.status === "active" && isOverdue(debt, now, secondsPerDay());
 }
 
 function partyActor(party) {
@@ -93,6 +104,9 @@ async function buildDebt(data, user) {
     rate: Math.min(Math.max(Number(data.rate) || 0, 0), 1000),
     periodDays: Math.max(0, Number(data.periodDays) || 0),
     transfer: !!data.transfer,
+    dueDays: Math.max(0, Math.floor(Number(data.dueDays) || 0)),
+    lateFee: Math.min(Math.max(Number(data.lateFee) || 0, 0), 1000),
+    reminded: { soon: false, overdue: false },
     note: String(data.note ?? "").slice(0, 500),
     status: "proposed",
     closedReason: null,
@@ -128,7 +142,13 @@ async function activate(debts, debt) {
       debtor: esc(debt.debtor.name),
       amount: esc(format(debt.principal, debt.system))
     }),
-    { icon: "fa-file-signature" }
+    {
+      icon: "fa-file-signature",
+      type: debt.transfer ? "loan" : "debt",
+      actors: [debt.creditor.uuid, debt.debtor.uuid],
+      amount: debt.principal,
+      system: debt.system
+    }
   );
 }
 
@@ -242,7 +262,7 @@ registerHandler("debt.repay", async ({ id, amount }, user) => {
       amount: esc(format(value, debt.system)),
       left: esc(format(left, debt.system))
     }),
-    { icon: "fa-receipt" }
+    { icon: "fa-receipt", type: "repay", actors: [debt.creditor.uuid, debt.debtor.uuid], amount: value, system: debt.system }
   );
   notifyUsers(usersForSide(debt, "creditor").filter((uid) => uid !== user.id), "Notify.Repaid", {
     name: debt.debtor.name,
@@ -257,7 +277,11 @@ registerHandler("debt.forgive", async ({ id }, user) => {
   if (debt.status !== "active") throw new MintError("NotActive");
   if (!userHasSide(user, debt, "creditor")) throw new MintError("NotParty");
   await close(debts, debt, "forgiven");
-  await logTransaction(t("Chat.Forgive", { creditor: esc(debt.creditor.name), debtor: esc(debt.debtor.name) }), { icon: "fa-dove" });
+  await logTransaction(t("Chat.Forgive", { creditor: esc(debt.creditor.name), debtor: esc(debt.debtor.name) }), {
+    icon: "fa-dove",
+    type: "forgive",
+    actors: [debt.creditor.uuid, debt.debtor.uuid]
+  });
   notifyUsers(usersForSide(debt, "debtor").filter((uid) => uid !== user.id), "Notify.Forgiven", { name: debt.creditor.name });
   return {};
 });
@@ -274,6 +298,46 @@ registerHandler("debt.cancel", async ({ id, remove }, user) => {
 });
 
 /* -------------------------------------------- */
+/*  Échéances et rappels                        */
+/* -------------------------------------------- */
+
+/**
+ * Prévient les parties quand une échéance approche ou est dépassée (MJ actif, à chaque
+ * changement du temps du monde). Chaque rappel n'est envoyé qu'une fois par dette.
+ */
+export async function checkDueDates(now = worldTime()) {
+  const debts = getDebts();
+  const soonDays = Math.max(0, Number(game.settings.get(MODULE_ID, SETTINGS.dueReminderDays)) || 0);
+  let changed = false;
+  for (const debt of Object.values(debts)) {
+    if (debt.status !== "active" || dueTime(debt, secondsPerDay()) === null) continue;
+    debt.reminded ??= { soon: false, overdue: false };
+    const left = daysLeft(debt, now);
+    const users = [...usersForSide(debt, "debtor"), ...usersForSide(debt, "creditor")];
+    const data = { debtor: debt.debtor.name, creditor: debt.creditor.name, amount: format(owed(debt, now), debt.system) };
+    if (left !== null && left <= 0 && isOverdue(debt, now, secondsPerDay()) && !debt.reminded.overdue) {
+      debt.reminded.overdue = debt.reminded.soon = true;
+      changed = true;
+      notifyUsers(users, "Notify.Overdue", data);
+      await logTransaction(t("Chat.Overdue", { debtor: esc(debt.debtor.name), creditor: esc(debt.creditor.name), amount: esc(data.amount) }), {
+        icon: "fa-hourglass-end",
+        type: "overdue",
+        actors: [debt.creditor.uuid, debt.debtor.uuid]
+      });
+    } else if (left !== null && left > 0 && left <= soonDays && !debt.reminded.soon) {
+      debt.reminded.soon = true;
+      changed = true;
+      notifyUsers(users, "Notify.DueSoon", { ...data, days: left });
+    } else if (left !== null && left > soonDays && (debt.reminded.soon || debt.reminded.overdue)) {
+      // Retour en arrière dans le temps : les rappels pourront repartir
+      debt.reminded = { soon: false, overdue: false };
+      changed = true;
+    }
+  }
+  if (changed) await saveDebts(debts);
+}
+
+/* -------------------------------------------- */
 /*  Appels côté client                          */
 /* -------------------------------------------- */
 
@@ -285,5 +349,7 @@ export const debtApi = {
   repay: (id, amount) => gmCall("debt.repay", { id, amount }),
   forgive: (id) => gmCall("debt.forgive", { id }),
   cancel: (id, remove = false) => gmCall("debt.cancel", { id, remove }),
-  owed
+  owed,
+  daysLeft,
+  overdue
 };

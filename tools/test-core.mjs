@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import {
   sortedDenoms, walletValue, breakdown, formatValue, parseAmount, pay, addCoins, removeCoins, exchangeValue
 } from "../scripts/core/money.js";
-import { unitPrice, buyTotal, sellTotal, restockStock, priceFactor } from "../scripts/core/pricing.js";
-import { amountOwed, periodsElapsed } from "../scripts/core/interest.js";
+import { unitPrice, buyTotal, sellTotal, restockStock, priceFactor, customerFactors, haggleOutcome } from "../scripts/core/pricing.js";
+import { amountOwed, periodsElapsed, isOverdue, lateFee, daysUntilDue, dueTime } from "../scripts/core/interest.js";
 
 const currencies = [
   { id: "pc", system: "s", abbr: "pc", name: "Cuivre", value: 1 },
@@ -118,4 +118,37 @@ test("intérêts", () => {
   assert.equal(amountOwed({ ...debt, repaid: 500 }, 15 * day), 700);
   assert.equal(amountOwed({ ...debt, rate: 0 }, 100 * day), 1000);
   assert.equal(amountOwed({ ...debt, repaid: 5000 }, 0), 0);
+});
+
+test("réputation et marchandage", () => {
+  const shop = { elasticity: 0.5, minFactor: 0.5, maxFactor: 3, markup: 0, sellRatio: 0.5 };
+  const item = { price: 100, stock: 10, target: 10 };
+  const f = customerFactors([-10, -5]);
+  assert.equal(f.pct, -15);
+  assert.equal(f.buy, 0.85);
+  assert.equal(f.sell, 1.15);
+  assert.equal(unitPrice(item, shop, 10, f.buy), 85);
+  assert.equal(buyTotal(item, shop, 2, f.buy), 85 + 89);
+  assert.equal(sellTotal(item, shop, 1, f.sell), 54); // 95 × 1,15 × 0,5 = 54,6
+  assert.equal(customerFactors([500]).buy, 3);
+  assert.equal(haggleOutcome(15, 15), -5);
+  assert.equal(haggleOutcome(22, 15), -12);
+  assert.equal(haggleOutcome(40, 15), -20);
+  assert.equal(haggleOutcome(12, 15), 0);
+  assert.equal(haggleOutcome(10, 15), 10);
+  assert.equal(haggleOutcome(30, 15, { maxDiscount: 8 }), -8);
+});
+
+test("échéances et retards", () => {
+  const day = 86400;
+  const debt = { principal: 1000, rate: 0, periodDays: 7, start: 0, repaid: 0, dueDays: 10, lateFee: 5 };
+  assert.equal(dueTime(debt), 10 * day);
+  assert.equal(isOverdue(debt, 10 * day), false);
+  assert.equal(isOverdue(debt, 10 * day + 1), true);
+  assert.equal(lateFee(debt, 11 * day), 50);
+  assert.equal(amountOwed(debt, 9 * day), 1000);
+  assert.equal(amountOwed(debt, 11 * day), 1050);
+  assert.equal(daysUntilDue(debt, 7 * day), 3);
+  assert.equal(daysUntilDue(debt, 12 * day), -2);
+  assert.equal(daysUntilDue({ ...debt, dueDays: 0 }, 0), null);
 });

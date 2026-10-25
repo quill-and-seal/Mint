@@ -1,8 +1,21 @@
-/** Journal des transactions dans le chat (réglage « chatLog » : off, gm ou all). */
+/**
+ * Journal des transactions : historique de Mint (toujours) et chat (réglage « chatLog » : off, gm ou all).
+ */
 
 import { MODULE_ID, SETTINGS, esc } from "./constants.js";
+import { addHistory } from "./history.js";
 
-export async function logTransaction(text, { icon = "fa-coins", speaker = null } = {}) {
+/**
+ * @param {string} text  HTML (noms déjà échappés)
+ * @param {object} meta  icon, type, actors (UUID des acteurs concernés), amount, system, speaker
+ */
+export async function logTransaction(text, { icon = "fa-coins", speaker = null, type = "misc", actors = [], amount = null, system = null } = {}) {
+  try {
+    await addHistory({ type, icon, text, actors, amount, system });
+  } catch (err) {
+    console.warn("Mint | historique impossible", err);
+  }
+
   const mode = game.settings.get(MODULE_ID, SETTINGS.chatLog);
   if (mode === "off") return;
   const data = {

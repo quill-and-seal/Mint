@@ -10,7 +10,15 @@ export const SETTINGS = Object.freeze({
   shops: "shops",
   debts: "debts",
   sheetPath: "sheetPath",
-  chatLog: "chatLog"
+  chatLog: "chatLog",
+  history: "history",
+  historySize: "historySize",
+  merchantRange: "merchantRange",
+  merchantDoubleClick: "merchantDoubleClick",
+  haggleFormula: "haggleFormula",
+  dueReminderDays: "dueReminderDays",
+  pots: "pots",
+  otiumHistory: "otiumHistory"
 });
 
 /** Flag d'acteur qui contient la bourse (devises non reliées à la fiche). */

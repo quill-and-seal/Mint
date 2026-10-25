@@ -155,7 +155,11 @@ registerHandler("wallet.give", async ({ fromUuid, toUuid, coins }, user) => {
   await setWallet(from, left);
   await setWallet(to, addCoins(getWallet(to), given));
   const text = groupedText(given);
-  await logTransaction(t("Chat.Give", { from: esc(from.name), to: esc(to.name), amount: esc(text) }), { icon: "fa-hand-holding-dollar" });
+  await logTransaction(t("Chat.Give", { from: esc(from.name), to: esc(to.name), amount: esc(text) }), {
+    icon: "fa-hand-holding-dollar",
+    type: "give",
+    actors: [from.uuid, to.uuid]
+  });
   return { coins: given };
 });
 
@@ -185,7 +189,7 @@ registerHandler("wallet.exchange", async ({ actorUuid, fromSystem, toSystem, amo
       given: esc(format(value, from.id)),
       received: esc(formatPurse(received, to.id))
     }),
-    { icon: "fa-scale-balanced" }
+    { icon: "fa-scale-balanced", type: "exchange", actors: [actor.uuid], amount: value, system: from.id }
   );
   return { received };
 });
