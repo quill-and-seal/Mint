@@ -1,0 +1,52 @@
+name: Release
+
+# Publie module.json et module.zip quand une release GitHub est créée.
+#
+# Le tag donne la version : on retire les lettres du début (v0.1.0 → 0.1.0).
+#
+# Lien de manifeste écrit dans module.json :
+#   - release normale : .../releases/latest/download/module.json (suit la dernière stable)
+#   - pré-version    : .../releases/download/<tag>/module.json (reste sur cette version,
+#                      pour que Foundry ne « mette pas à jour » vers une autre version)
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Préparer la version et le manifeste
+        env:
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="$(echo "$TAG" | sed -E 's/^[A-Za-z]+//')"
+          BASE="https://github.com/${GITHUB_REPOSITORY}/releases"
+          if [ "$PRERELEASE" = "true" ]; then
+            MANIFEST="${BASE}/download/${TAG}/module.json"
+          else
+            MANIFEST="${BASE}/latest/download/module.json"
+          fi
+          echo "Version ${VERSION} — manifeste ${MANIFEST}"
+          jq --arg v "$VERSION" \
+             --arg d "${BASE}/download/${TAG}/module.zip" \
+             --arg m "$MANIFEST" \
+             '.version = $v | .download = $d | .manifest = $m' module.json > module.tmp.json
+          mv module.tmp.json module.json
+
+      - name: Créer l'archive
+        run: zip -r module.zip module.json scripts styles lang README.md LICENSE
+
+      - name: Joindre à la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            module.json
+            module.zip

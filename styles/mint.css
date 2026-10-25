@@ -1,0 +1,446 @@
+/* Mint — styles des fenêtres. S'appuie sur les variables de thème de Foundry v14. */
+
+.mint {
+  --mint-accent: #3fae8c;
+  --mint-accent-soft: color-mix(in srgb, var(--mint-accent) 18%, transparent);
+  --mint-border: var(--color-border, rgba(127, 127, 127, 0.35));
+  --mint-muted: var(--color-text-secondary, #888);
+  --mint-up: #d9763f;
+  --mint-down: #3fae8c;
+}
+
+.mint .mint-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.mint .mint-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mint .mint-grow {
+  flex: 1;
+}
+
+.mint .mint-muted {
+  color: var(--mint-muted);
+}
+
+.mint .mint-empty {
+  color: var(--mint-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.mint .mint-warn {
+  color: var(--mint-up);
+  font-size: 0.9em;
+  margin: 0.3rem 0;
+}
+
+.mint .mint-center {
+  text-align: center;
+}
+
+.mint .mint-actor-pick label {
+  flex: 0 0 auto;
+  font-weight: bold;
+}
+
+.mint .mint-actor-pick select {
+  flex: 1;
+}
+
+.mint .mint-icon-btn {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.mint .mint-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.mint .mint-actions button {
+  flex: 1;
+}
+
+.mint .mint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.25rem 1rem;
+}
+
+.mint .mint-badge {
+  display: inline-block;
+  min-width: 1.2em;
+  padding: 0 0.35em;
+  border-radius: 1em;
+  background: var(--mint-accent);
+  color: #fff;
+  font-size: 0.8em;
+  text-align: center;
+}
+
+/* Pièces ------------------------------------------------------------------ */
+
+.mint-coin {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--mint-coin) 40%, #fff), var(--mint-coin) 60%, color-mix(in srgb, var(--mint-coin) 70%, #000));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  vertical-align: middle;
+}
+
+.mint .mint-system h3 {
+  margin: 0.4rem 0 0.2rem;
+  border-bottom: 1px solid var(--mint-border);
+}
+
+.mint .mint-coins {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mint .mint-coin-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+}
+
+.mint .mint-coin-name {
+  flex: 1;
+}
+
+.mint .mint-coin-row input {
+  width: 6rem;
+  text-align: right;
+}
+
+.mint .mint-coin-count {
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.mint .mint-coin-abbr {
+  width: 2.2rem;
+  color: var(--mint-muted);
+}
+
+.mint .mint-total {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  background: var(--mint-accent-soft);
+}
+
+.mint .mint-total strong {
+  flex: 1;
+  text-align: right;
+}
+
+/* Tableaux ---------------------------------------------------------------- */
+
+.mint .mint-table-wrap,
+.mint .mint-scroll,
+.mint .mint-debts {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.mint .mint-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.mint .mint-table th {
+  text-align: left;
+  font-weight: normal;
+  color: var(--mint-muted);
+  border-bottom: 1px solid var(--mint-border);
+  padding: 0.25rem;
+}
+
+.mint .mint-table td {
+  padding: 0.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--mint-border) 50%, transparent);
+  vertical-align: middle;
+}
+
+.mint .mint-item-img img {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.mint .mint-item-name {
+  width: 100%;
+}
+
+.mint .mint-price {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.mint .mint-price.up {
+  color: var(--mint-up);
+}
+
+.mint .mint-price.down {
+  color: var(--mint-down);
+}
+
+.mint .mint-stock {
+  text-align: center;
+}
+
+.mint .mint-qty input {
+  width: 3.5rem;
+}
+
+.mint tr.mint-out {
+  opacity: 0.45;
+}
+
+.mint .mint-edit-table input[type="text"] {
+  min-width: 6rem;
+}
+
+.mint .mint-edit-table input[type="number"] {
+  width: 4.5rem;
+}
+
+.mint .mint-edit-table td:nth-child(2) {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.mint .mint-short {
+  width: 4rem;
+}
+
+/* Onglets ----------------------------------------------------------------- */
+
+.mint .mint-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--mint-border);
+}
+
+.mint .mint-tabs a {
+  padding: 0.3rem 0.8rem;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.mint .mint-tabs a.active {
+  border-bottom-color: var(--mint-accent);
+  font-weight: bold;
+}
+
+/* Boutiques --------------------------------------------------------------- */
+
+.mint-shops .mint-shop-layout {
+  display: flex;
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.mint-shops .mint-shop-list {
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-right: 1px solid var(--mint-border);
+  padding-right: 0.5rem;
+}
+
+.mint-shops .mint-shop-list ul {
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+
+.mint-shops .mint-shop-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mint-shops .mint-shop-list li span {
+  flex: 1;
+}
+
+.mint-shops .mint-shop-list li img {
+  width: 24px;
+  height: 24px;
+  border: none;
+}
+
+.mint-shops .mint-shop-list li.active,
+.mint-shops .mint-shop-list li:hover {
+  background: var(--mint-accent-soft);
+}
+
+.mint-shops .mint-shop-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mint-shops .mint-shop-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.mint-shops .mint-shop-head > div:first-child {
+  flex: 1;
+}
+
+.mint-shops .mint-shop-head h2 {
+  margin: 0;
+  border: none;
+}
+
+.mint-shops .mint-shop-head p {
+  margin: 0.1rem 0;
+}
+
+.mint-shops .mint-gm-tools {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.mint-shops .mint-purse {
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+/* Registre ---------------------------------------------------------------- */
+
+.mint-ledger .mint-debt {
+  border: 1px solid var(--mint-border);
+  border-left: 4px solid var(--mint-accent);
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.mint-ledger .mint-debt-proposed {
+  border-left-color: #c9a227;
+}
+
+.mint-ledger .mint-debt-closed {
+  border-left-color: var(--mint-border);
+  opacity: 0.7;
+}
+
+.mint-ledger .mint-debt-parties {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.05em;
+}
+
+.mint-ledger .mint-party.mine {
+  font-weight: bold;
+  color: var(--mint-accent);
+}
+
+.mint-ledger .mint-debt-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.mint-ledger .mint-debt-status {
+  margin-left: auto;
+}
+
+.mint-ledger .mint-debt-note {
+  margin: 0.3rem 0 0;
+  font-style: italic;
+}
+
+.mint-ledger .mint-debt-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+
+.mint-ledger .mint-debt-actions button {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* Éditeur et configuration ------------------------------------------------ */
+
+.mint-shop-editor .mint-editor-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.mint-shop-editor h3 {
+  margin: 0;
+  border: none;
+}
+
+.mint .mint-link {
+  cursor: pointer;
+  color: var(--mint-accent);
+}
+
+.mint-currency-config fieldset {
+  border: 1px solid var(--mint-border);
+  border-radius: 6px;
+  margin: 0 0 0.6rem;
+}
+
+.mint-currency-config input[type="color"] {
+  width: 2.5rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+}
+
+/* Chat -------------------------------------------------------------------- */
+
+.mint-chat i {
+  color: #3fae8c;
+  margin-right: 0.2rem;
+}

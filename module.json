@@ -1,0 +1,41 @@
+{
+  "id": "mint-economy",
+  "title": "Mint",
+  "description": "Économie pour Foundry VTT : monnaies personnalisées et change, boutiques aux prix dynamiques (offre et demande), prêts et dettes entre joueurs. Agnostique, avec synchronisation de la fiche dnd5e.",
+  "version": "0.1.0",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Argan",
+      "url": "https://github.com/quill-and-seal"
+    }
+  ],
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/mint.css"
+  ],
+  "languages": [
+    {
+      "lang": "fr",
+      "name": "Français",
+      "path": "lang/fr.json"
+    },
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "socket": true,
+  "url": "https://github.com/quill-and-seal/Mint",
+  "manifest": "https://github.com/quill-and-seal/Mint/releases/latest/download/module.json",
+  "download": "https://github.com/quill-and-seal/Mint/releases/download/v0.1.0/module.zip",
+  "bugs": "https://github.com/quill-and-seal/Mint/issues",
+  "license": "LICENSE",
+  "readme": "README.md"
+}
