@@ -47,10 +47,10 @@ const ROUTES = [
 ];
 
 const FACTIONS = [
-  { id: "compagnie-mers", name: L("Compagnie des Mers", "Sea Company"), kind: "company", region: "port-brume", goods: ["poisson", "sel", "epices"], treasury: 350000, shares: 1000, dividend: 2 },
-  { id: "guilde-forgerons", name: L("Guilde des Forgerons", "Smiths' Guild"), kind: "guild", region: "forge-noire", goods: ["fer"], treasury: 70000, shares: 1000, dividend: 3 },
-  { id: "confrerie-grain", name: L("Confrérie du Grain", "Grain Brotherhood"), kind: "guild", region: "valombre", goods: ["ble", "vin", "laine"], treasury: 300000, shares: 1000, dividend: 2 },
-  { id: "banque-lys", name: L("Banque de Lys", "Lily Bank"), kind: "bank", region: "valombre", goods: [], treasury: 500000, shares: 1000, dividend: 1.5, loanRate: 5, loanPeriodDays: 30, loanMax: 50000 }
+  { id: "compagnie-mers", name: L("Compagnie des Mers", "Sea Company"), kind: "company", region: "port-brume", goods: ["poisson", "sel", "epices"], treasury: 350000, shares: 100, dividend: 2 },
+  { id: "guilde-forgerons", name: L("Guilde des Forgerons", "Smiths' Guild"), kind: "guild", region: "forge-noire", goods: ["fer"], treasury: 70000, shares: 100, dividend: 3 },
+  { id: "confrerie-grain", name: L("Confrérie du Grain", "Grain Brotherhood"), kind: "guild", region: "valombre", goods: ["ble", "vin", "laine"], treasury: 300000, shares: 100, dividend: 2 },
+  { id: "banque-lys", name: L("Banque de Lys", "Lily Bank"), kind: "bank", region: "valombre", goods: [], treasury: 500000, shares: 100, dividend: 1.5, loanRate: 5, loanPeriodDays: 30, loanMax: 50000 }
 ];
 
 /** Modèles d'événements que le MJ peut déclencher (région et bien choisis au déclenchement). */

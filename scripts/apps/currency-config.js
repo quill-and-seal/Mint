@@ -49,6 +49,7 @@ export class CurrencyConfig extends MintApp {
               <td><input type="number" name="currencies.${idx}.value" min="1" step="1" value="${c.value}"></td>
               <td><input type="color" name="currencies.${idx}.color" value="${esc(/^#[0-9a-f]{6}$/i.test(c.color ?? "") ? c.color : "#999999")}"></td>
               <td><input type="text" name="currencies.${idx}.sheetKey" value="${esc(c.sheetKey ?? "")}" class="mint-short" placeholder="—"></td>
+              <td class="mint-center"><input type="checkbox" name="currencies.${idx}.display" ${c.display !== false ? "checked" : ""}></td>
               <td><button type="button" class="mint-icon-btn" data-action="removeCurrency" data-index="${idx}" data-tooltip="${esc(t("Currencies.RemoveCurrency"))}"><i class="fa-solid fa-trash"></i></button></td>
             </tr>`;
           })
@@ -64,7 +65,8 @@ export class CurrencyConfig extends MintApp {
           <table class="mint-table mint-edit-table">
             <thead><tr><th></th><th>${t("Currencies.Name")}</th><th>${t("Currencies.Abbr")}</th>
               <th data-tooltip="${esc(t("Currencies.ValueHint"))}">${t("Currencies.Value")}</th><th>${t("Currencies.Color")}</th>
-              <th data-tooltip="${esc(t("Currencies.SheetKeyHint"))}">${t("Currencies.SheetKey")}</th><th></th></tr></thead>
+              <th data-tooltip="${esc(t("Currencies.SheetKeyHint"))}">${t("Currencies.SheetKey")}</th>
+              <th data-tooltip="${esc(t("Currencies.DisplayHint"))}">${t("Currencies.Display")}</th><th></th></tr></thead>
             <tbody>${rows}</tbody>
           </table>
           ${warn}
@@ -112,6 +114,7 @@ export class CurrencyConfig extends MintApp {
       c.value = Math.max(1, Math.floor(Number(row.value) || c.value));
       c.color = row.color || c.color;
       c.sheetKey = String(row.sheetKey ?? "").trim();
+      c.display = !!row.display;
     });
     const path = String(data.sheetPath ?? "").trim() || "auto";
     if (path !== game.settings.get(MODULE_ID, SETTINGS.sheetPath)) await game.settings.set(MODULE_ID, SETTINGS.sheetPath, path);

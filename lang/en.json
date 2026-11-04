@@ -201,7 +201,16 @@
       "ReputationHint": "Price adjustment for each character: −10 = 10% discount (and selling 10% higher), +20 = 20% more expensive.",
       "PriceAdjust": "Adjustment",
       "HaggleCurrent": "Ongoing haggle",
-      "NoCharacters": "No player characters."
+      "NoCharacters": "No player characters.",
+      "Economy": "World economy",
+      "Region": "Region",
+      "NoRegion": "— None —",
+      "RegionHint": "Exchange region where the shop stands.",
+      "RegionHelp": "Items linked to a good follow its price in this region: the base price changes daily with supply and demand.",
+      "Good": "Tracked good",
+      "NoGood": "— Fixed price —",
+      "GoodQty": "Quantity of the good per item",
+      "MarketPrice": "Follows the good's price in the shop's region."
     },
     "Ledger": {
       "Title": "Loans and debts",
@@ -292,7 +301,9 @@
       "Preset": "Preset",
       "PresetFantasy": "Fantasy preset",
       "PresetSimple": "Single currency preset",
-      "ConfirmPreset": "Replace the whole currency configuration with this preset?"
+      "ConfirmPreset": "Replace the whole currency configuration with this preset?",
+      "Display": "Prices",
+      "DisplayHint": "Coin used to write prices and amounts. Uncheck platinum and electrum to read \"37 gp 7 cp\" rather than \"3 pp 1 ep 2 sp 7 cp\". Purses always show every coin."
     },
     "Chat": {
       "Give": "<strong>{from}</strong> gives {amount} to <strong>{to}</strong>.",
@@ -484,7 +495,7 @@
       "Trigger": "Trigger an event",
       "Where": "Where",
       "Alerts": "Today's shortages",
-      "AlertLine": "{region}: short of {n} {good}",
+      "AlertLine": "{region} is short of {good}: {n} {unit}",
       "FxProduction": "production {x}",
       "FxConsumption": "demand {x}",
       "FxPrice": "price {x}",

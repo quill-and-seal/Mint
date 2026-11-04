@@ -201,7 +201,16 @@
       "ReputationHint": "Ajustement des prix pour chaque personnage : −10 = 10 % de remise (et revente 10 % plus chère), +20 = 20 % plus cher.",
       "PriceAdjust": "Ajustement",
       "HaggleCurrent": "Marchandage en cours",
-      "NoCharacters": "Aucun personnage de joueur."
+      "NoCharacters": "Aucun personnage de joueur.",
+      "Economy": "Économie du monde",
+      "Region": "Région",
+      "NoRegion": "— Aucune —",
+      "RegionHint": "Région de la Bourse où se trouve la boutique.",
+      "RegionHelp": "Les articles reliés à un bien suivent son cours dans cette région : le prix de base change chaque jour avec l'offre et la demande.",
+      "Good": "Bien suivi",
+      "NoGood": "— Prix fixe —",
+      "GoodQty": "Quantité du bien par article",
+      "MarketPrice": "Suit le cours du bien dans la région de la boutique."
     },
     "Ledger": {
       "Title": "Prêts et dettes",
@@ -292,7 +301,9 @@
       "Preset": "Préréglage",
       "PresetFantasy": "Préréglage fantasy",
       "PresetSimple": "Préréglage une seule monnaie",
-      "ConfirmPreset": "Remplacer toute la configuration des monnaies par ce préréglage ?"
+      "ConfirmPreset": "Remplacer toute la configuration des monnaies par ce préréglage ?",
+      "Display": "Prix",
+      "DisplayHint": "Pièce utilisée pour écrire les prix et les sommes. Décoche le platine et l'électrum pour lire « 37 po 7 pc » plutôt que « 3 pp 1 pe 2 pa 7 pc ». Les bourses montrent toujours toutes les pièces."
     },
     "Chat": {
       "Give": "<strong>{from}</strong> donne {amount} à <strong>{to}</strong>.",
@@ -484,7 +495,7 @@
       "Trigger": "Déclencher un événement",
       "Where": "Où",
       "Alerts": "Pénuries du jour",
-      "AlertLine": "{region} : il manque {n} de {good}",
+      "AlertLine": "{region} manque de {good} : {n} {unit}",
       "FxProduction": "production {x}",
       "FxConsumption": "demande {x}",
       "FxPrice": "prix {x}",

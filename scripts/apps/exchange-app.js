@@ -29,7 +29,7 @@ export class ExchangeApp extends MintApp {
     this.goodId = null;
     this.factionId = null;
     this.actorUuid = defaultActor()?.uuid ?? null;
-    this.qty = 10;
+    this.qty = 1;
     this.eventRegion = "";
   }
 
@@ -183,13 +183,7 @@ export class ExchangeApp extends MintApp {
           <td class="num">${esc(format(Math.round(price), region.system))}</td>
           <td class="num">${delta(change(hist, 7))}</td>
           <td>${sparkline(hist.slice(-30))}</td>
-          ${
-            gm
-              ? `<td>${gauge(stock / target, { warn: 0.5, label: `${Math.round(stock)} / ${Math.round(target)}` })}</td>
-                 <td class="num mint-x-muted">${fmtN(region.production?.[g.id])}</td>
-                 <td class="num mint-x-muted">${fmtN(region.consumption?.[g.id])}</td>`
-              : ""
-          }
+          ${gm ? `<td>${gauge(stock / target, { warn: 0.5, label: `${Math.round(stock)} / ${Math.round(target)}` })}</td>` : ""}
         </tr>`;
       })
       .join("");
@@ -201,7 +195,7 @@ export class ExchangeApp extends MintApp {
           <table class="mint-x-table">
             <thead><tr>
               <th>${t("Exchange.Good")}</th><th class="num">${t("Exchange.Price")}</th><th class="num">${t("Exchange.Week")}</th><th>${t("Exchange.Days30")}</th>
-              ${gm ? `<th>${t("Exchange.Stock")}</th><th class="num">${t("Exchange.Prod")}</th><th class="num">${t("Exchange.Cons")}</th>` : ""}
+              ${gm ? `<th>${t("Exchange.Stock")}</th>` : ""}
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -238,9 +232,18 @@ export class ExchangeApp extends MintApp {
       .join("");
     const blocked = (world.routes ?? []).filter((rt) => (rt.a === region.id || rt.b === region.id) && routeBlocked(rt, world.events, world.day + 1));
 
+    const opts = { ...MARKET_DEFAULTS, ...world.settings };
+    const gmLine = game.user.isGM
+      ? `<dl class="mint-x-kpis">
+          <div><dt>${t("Exchange.Stock")}</dt><dd>${fmtN(region.stock?.[good.id])} / ${fmtN(stockTarget(region, good.id, opts))}</dd></div>
+          <div><dt>${t("Exchange.Prod")}</dt><dd>${fmtN(region.production?.[good.id])}</dd></div>
+          <div><dt>${t("Exchange.Cons")}</dt><dd>${fmtN(region.consumption?.[good.id])}</dd></div>
+        </dl>`
+      : "";
     return `
       <h3>${esc(good.name)} <span class="mint-x-muted">${t("Exchange.In", { region: esc(region.name) })}</span></h3>
       <div class="mint-x-chartbox">${chart(hist.map(toLocal), { w: 340, h: 150, fmt, label: t("Exchange.ChartLabel", { good: good.name }), days: world.history.days })}</div>
+      ${gmLine}
       <h4>${t("Exchange.Compare")}</h4>
       <div class="mint-x-bars">${bars}</div>
       <h4>${t("Exchange.Flows")}</h4>
@@ -474,7 +477,10 @@ export class ExchangeApp extends MintApp {
       )
       .join("");
     const alerts = (world.alerts ?? [])
-      .map((a) => `<li><i class="fa-solid fa-triangle-exclamation mint-x-warn"></i> ${t("Exchange.AlertLine", { region: esc(regionName(a.region)), good: esc(goodName(a.good)), n: a.missing })}</li>`)
+      .map((a) => {
+        const unit = world.goods.find((g) => g.id === a.good)?.unit ?? "";
+        return `<li><i class="fa-solid fa-triangle-exclamation mint-x-warn"></i> <span>${t("Exchange.AlertLine", { region: esc(regionName(a.region)), good: esc(goodName(a.good)), n: a.missing, unit: esc(unit) })}</span></li>`;
+      })
       .join("");
     return `
       <div class="mint-x-stack">
@@ -491,7 +497,7 @@ export class ExchangeApp extends MintApp {
           </div>
           <div class="mint-x-cards events">${tpls}</div>
         </div>
-        ${alerts ? `<div class="mint-x-panel"><h4>${t("Exchange.Alerts")}</h4><ul class="mint-x-list">${alerts}</ul></div>` : ""}
+        ${alerts ? `<div class="mint-x-panel"><h4>${t("Exchange.Alerts")}</h4><ul class="mint-x-alerts">${alerts}</ul></div>` : ""}
       </div>`;
   }
 

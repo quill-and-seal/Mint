@@ -9,6 +9,7 @@
 import { t, esc } from "../constants.js";
 import { getConfig, getSystem, format, parse, getCurrency } from "../currencies.js";
 import { getShop, saveShop, newItem, merchantActor, haggleFormula } from "../shops.js";
+import { getWorld } from "../world.js";
 import { MintApp, options } from "./base.js";
 
 const TABS = ["shop", "items", "customers"];
@@ -103,10 +104,24 @@ export class ShopEditor extends MintApp {
             <div class="form-fields"><input type="number" name="minFactor" min="0" step="0.05" value="${shop.minFactor}"><span>–</span><input type="number" name="maxFactor" min="0" step="0.05" value="${shop.maxFactor}"></div></div>
           <div class="form-group"><label data-tooltip="${esc(t("Editor.RestockHint"))}">${t("Editor.RestockHours")}</label><input type="number" name="restockHours" min="0" step="1" value="${shop.restockHours}"></div>
         </div>
+        ${this._regionHtml(shop)}
       </section>`;
   }
 
+  /** Lien avec l'économie du monde : la région dont les cours servent de prix de base. */
+  _regionHtml(shop) {
+    const world = getWorld();
+    if (!world?.regions.length) return "";
+    return `
+        <h3>${t("Editor.Economy")}</h3>
+        <div class="form-group"><label data-tooltip="${esc(t("Editor.RegionHint"))}">${t("Editor.Region")}</label>
+          <select name="region"><option value="">${esc(t("Editor.NoRegion"))}</option>${options(world.regions, shop.region)}</select></div>
+        <p class="hint">${t("Editor.RegionHelp")}</p>`;
+  }
+
   _itemsHtml(shop) {
+    const world = shop.region ? getWorld() : null;
+    const goods = world?.goods?.length ? world.goods : null;
     const items = shop.items
       .map(
         (e, i) => `
@@ -120,7 +135,13 @@ export class ShopEditor extends MintApp {
                 : `<i class="fa-solid fa-bell-concierge mint-muted" data-tooltip="${esc(t("Editor.NotLinked"))}"></i>`
             }
           </td>
-          <td><input type="text" name="items.${i}.price" value="${esc(format(e.price, shop.system))}"></td>
+          <td>
+            <input type="text" name="items.${i}.price" value="${esc(format(e.price, shop.system))}" ${e.market ? `readonly data-tooltip="${esc(t("Editor.MarketPrice"))}"` : ""}>
+            ${goods ? `<div class="form-fields mint-good-link">
+              <select name="items.${i}.good" aria-label="${esc(t("Editor.Good"))}"><option value="">${esc(t("Editor.NoGood"))}</option>${options(goods, e.good)}</select>
+              ${e.good ? `<input type="number" name="items.${i}.goodQty" min="0.01" step="0.05" value="${e.goodQty}" aria-label="${esc(t("Editor.GoodQty"))}" data-tooltip="${esc(t("Editor.GoodQty"))}">` : ""}
+            </div>` : ""}
+          </td>
           <td><input type="number" name="items.${i}.stock" min="0" step="1" value="${e.stock ?? ""}" placeholder="∞"></td>
           <td><input type="number" name="items.${i}.target" min="0" step="1" value="${e.target ?? ""}" ${e.stock === null ? "disabled" : ""}></td>
           <td><input type="number" name="items.${i}.restock" min="0" step="1" value="${e.restock}"></td>
@@ -226,6 +247,7 @@ export class ShopEditor extends MintApp {
       if (has("markupPct")) next.markup = (Number(data.markupPct) || 0) / 100;
       if (has("sellRatioPct")) next.sellRatio = (Number(data.sellRatioPct) || 0) / 100;
       for (const k of ["elasticity", "minFactor", "maxFactor", "restockHours"]) if (has(k)) next[k] = data[k];
+      if (has("region")) next.region = data.region || "";
     } else if (this.tab === "items") {
       next.items = shop.items.map((e, i) => {
         const row = data.items?.[i] ?? {};
@@ -238,7 +260,9 @@ export class ShopEditor extends MintApp {
           target: stock === null ? null : row.target === null || row.target === undefined || row.target === "" ? (e.target ?? stock) : Number(row.target),
           restock: Number(row.restock ?? e.restock) || 0,
           modifier: Number(row.modifier ?? e.modifier),
-          buyback: !!row.buyback
+          buyback: !!row.buyback,
+          good: row.good === undefined ? e.good : row.good || "",
+          goodQty: Number(row.goodQty ?? e.goodQty) || 1
         };
       });
     } else if (this.tab === "customers") {

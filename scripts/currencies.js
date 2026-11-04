@@ -23,9 +23,9 @@ export function presets() {
       fee: 0.05,
       systems: [{ id: "standard", name: t("Preset.Fantasy.System"), rate: 1, primary: "po" }],
       currencies: [
-        { id: "pp", system: "standard", name: t("Preset.Fantasy.pp"), abbr: t("Preset.Fantasy.ppAbbr"), value: 1000, color: "#d9dde3", sheetKey: "pp" },
+        { id: "pp", system: "standard", name: t("Preset.Fantasy.pp"), abbr: t("Preset.Fantasy.ppAbbr"), value: 1000, color: "#d9dde3", sheetKey: "pp", display: false },
         { id: "po", system: "standard", name: t("Preset.Fantasy.po"), abbr: t("Preset.Fantasy.poAbbr"), value: 100, color: "#e7b84a", sheetKey: "gp" },
-        { id: "pe", system: "standard", name: t("Preset.Fantasy.pe"), abbr: t("Preset.Fantasy.peAbbr"), value: 50, color: "#c9b37a", sheetKey: "ep" },
+        { id: "pe", system: "standard", name: t("Preset.Fantasy.pe"), abbr: t("Preset.Fantasy.peAbbr"), value: 50, color: "#c9b37a", sheetKey: "ep", display: false },
         { id: "pa", system: "standard", name: t("Preset.Fantasy.pa"), abbr: t("Preset.Fantasy.paAbbr"), value: 10, color: "#b8c0c8", sheetKey: "sp" },
         { id: "pc", system: "standard", name: t("Preset.Fantasy.pc"), abbr: t("Preset.Fantasy.pcAbbr"), value: 1, color: "#b8733d", sheetKey: "cp" }
       ]
@@ -50,7 +50,13 @@ export function getConfig() {
   cache = {
     fee: Number(base.fee) || 0,
     systems: (base.systems ?? []).map((s) => ({ ...s, rate: Number(s.rate) || 1 })),
-    currencies: (base.currencies ?? []).map((c) => ({ ...c, value: Math.max(1, Math.floor(Number(c.value) || 1)) }))
+    currencies: (base.currencies ?? []).map((c) => ({
+      ...c,
+      value: Math.max(1, Math.floor(Number(c.value) || 1)),
+      // Pièces utilisées pour écrire les prix (« 37 po 7 pc » plutôt que « 3 pp 7 po 7 pc ») ;
+      // les mondes créés avant ce réglage masquent le platine et l'électrum de dnd5e
+      display: c.display ?? !(["pp", "ep"].includes(c.sheetKey) && ["pp", "pe"].includes(c.id))
+    }))
   };
   return cache;
 }
@@ -87,7 +93,9 @@ export function defaultSystemId() {
 
 /** Valeur → texte dans un système : « 2 po 5 pa ». */
 export function format(value, systemId) {
-  return formatValue(value, denoms(systemId));
+  const all = denoms(systemId);
+  const shown = all.filter((c) => c.display !== false);
+  return formatValue(value, shown.length ? shown : all);
 }
 
 /** Pièces → texte. */

@@ -48,7 +48,7 @@ export function sparkline(values, { w = 96, h = 26, label = "" } = {}) {
  */
 export function chart(values, { w = 520, h = 180, fmt = (v) => String(Math.round(v)), label = "", days = null } = {}) {
   const padL = 6;
-  const padR = 64;
+  const padR = 100;
   const s = scale(values ?? [], w - padR, h, 10);
   if (!s) return `<div class="mint-chart-empty">—</div>`;
   const pts = s.vals.map((v, i) => `${f1(s.x(i) + padL)},${f1(s.y(v))}`);
@@ -65,8 +65,8 @@ export function chart(values, { w = 520, h = 180, fmt = (v) => String(Math.round
     <line class="last" x1="${padL}" x2="${w - padR + 4}" y1="${f1(lastY)}" y2="${f1(lastY)}"></line>
     <rect class="tag" x="${w - padR + 4}" y="${f1(lastY - 9)}" width="${padR - 6}" height="18" rx="2"></rect>
     <text class="tag-text" x="${w - padR + 8}" y="${f1(lastY + 4)}">${fmt(last)}</text>
-    <text class="axis" x="${w - padR + 8}" y="16">${fmt(s.hi)}</text>
-    <text class="axis" x="${w - padR + 8}" y="${h - 6}">${fmt(s.lo)}</text>
+    ${Math.abs(lastY - 12) > 16 ? `<text class="axis" x="${w - padR + 8}" y="16">${fmt(s.hi)}</text>` : ""}
+    ${Math.abs(lastY - (h - 10)) > 16 ? `<text class="axis" x="${w - padR + 8}" y="${h - 6}">${fmt(s.lo)}</text>` : ""}
     ${firstDay !== undefined ? `<text class="axis" x="${padL}" y="${h - 4}">J${firstDay}</text>` : ""}
     ${lastDay !== undefined ? `<text class="axis end" x="${w - padR - 2}" y="${h - 4}" text-anchor="end">J${lastDay}</text>` : ""}
   </svg>`;

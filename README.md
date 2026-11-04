@@ -1,6 +1,6 @@
 # Mint
 
-Économie pour **Foundry VTT v14** : monnaies personnalisées et change, boutiques aux prix qui suivent l'offre et la demande, marchands sur la scène, réputation et marchandage, prêts et dettes avec échéances, historique des transactions.
+Économie pour **Foundry VTT v14** : une économie du monde vivante (régions, biens, routes commerciales, factions cotées en bourse), monnaies personnalisées et change, boutiques aux prix qui suivent les cours, marchands sur la scène, réputation et marchandage, prêts et dettes avec échéances, historique des transactions.
 
 Mint est **agnostique** : il fonctionne avec n'importe quel système de jeu. Avec **dnd5e**, les pièces sont lues et écrites directement sur la fiche (`system.currency`), donc ce que montre Mint et ce que montre la fiche restent identiques.
 
@@ -16,12 +16,45 @@ https://github.com/quill-and-seal/Mint/releases/latest/download/module.json
 
 ## Où trouver Mint
 
-- Dans la barre d'outils de gauche, groupe **Jetons** : **Bourse** (pièces), **Boutiques** et **Prêts et dettes**. Ces boutons sont visibles par tous les joueurs.
+- Dans la barre d'outils de gauche, groupe **Jetons** : **Bourse** (pièces du personnage), **Boutiques**, **Prêts et dettes** et **Bourse** de l'économie du monde (courbe). Ces boutons sont visibles par tous les joueurs.
 - Sur les fiches d'acteur : bouton **Bourse** dans le menu de l'en-tête (et **Boutique** sur la fiche d'un marchand).
 - Sur la scène : **double-clic sur le token d'un marchand** pour ouvrir sa boutique. On peut aussi cibler le marchand puis cliquer sur **Boutiques**.
 - Configuration des monnaies (MJ) : **Paramètres du module → Mint → Configurer les monnaies**.
 
 Les opérations des joueurs (dons, achats, remboursements…) sont validées et appliquées par le MJ : **un MJ doit être connecté**.
+
+## Économie du monde
+
+La fenêtre **Bourse** (icône de courbe) montre l'économie de tout le monde de jeu, dans une interface de salle des marchés.
+
+### Comment ça marche
+
+- Des **régions** produisent et consomment des **biens** (blé, fer, épices…). Chaque bien a un stock dans chaque région.
+- Le **prix** d'un bien dans une région suit son stock : sous le stock normal (quelques jours de besoins), il monte ; au-dessus, il baisse. Taxe, modificateur de région et événements s'y ajoutent.
+- Des **routes** relient les régions. Chaque jour, des marchands achètent là où c'est bon marché et revendent là où c'est cher, tant que l'écart couvre le transport et le risque : les prix se rapprochent d'une région à l'autre.
+- La **prospérité** de chaque région monte quand la population est bien approvisionnée (la nourriture compte triple) et baisse en cas de pénurie ; elle fait varier production et demande.
+- Les **factions** (guildes, compagnies, banques) gagnent de l'argent sur la production et le commerce de leurs biens dans leur région. Leur **action** suit leur valeur par action et la confiance, avec un peu de hasard. Elles versent des **dividendes** à leurs actionnaires.
+- L'économie avance d'un jour par jour du calendrier de Foundry (réglable), ou avec les boutons **+1 jour** / **+7 jours** du MJ.
+
+Le monde d'exemple contient quatre régions (Port-Brume, Valombre, Forge-Noire, Sylvemarche), huit biens, quatre routes et quatre factions, déjà équilibrés. On peut aussi partir d'un monde vide.
+
+### Onglets
+
+- **Marchés** : cours de chaque bien dans la région choisie, variation sur 7 jours, courbe sur 30 jours, comparaison entre régions, commerce du jour. Le MJ voit aussi les stocks, la production et la consommation.
+- **Factions** : cours des actions, achat et vente pour les personnages, dividendes. Chez une **banque**, un personnage peut **demander un prêt** : la demande arrive dans Prêts et dettes, le MJ (qui joue la banque) l'accepte ou la refuse, et le remboursement revient à la banque.
+- **Portefeuille** : actions détenues par tes personnages, valeur, plus-value, prêts des banques.
+- **Monnaie** (MJ) : argent des personnages, trésoreries des factions, indice des prix (inflation), fortune de chaque personnage.
+- **Événements** (MJ) : famine, guerre, peste, ruée minière, festival, tempêtes, récolte abondante, embargo, sur une région ou partout. Ils changent la production, la demande, les prix, coupent des routes et font bouger les cours. Les pénuries du jour y sont listées.
+
+Un bandeau défilant affiche en continu les cours de la région et des factions.
+
+### Éditeur du monde (MJ)
+
+Bouton **Éditer le monde** dans la Bourse : biens (prix de base, pertes quotidiennes), régions (monnaie, taxe, production, consommation, stocks, scènes liées), routes (durée, coût, capacité, risque), factions (trésorerie, actions, dividende, conditions de prêt) et réglages de la simulation (élasticité, volatilité, intensité du commerce…).
+
+### Boutiques indexées
+
+Dans l'éditeur de boutique, choisis la **région** de la boutique, puis relie un article à un **bien** (avec une quantité : une miche = 0,2 sac de blé). Son prix de base suit alors le cours du bien dans la région, jour après jour.
 
 ## Monnaies et change
 
@@ -30,6 +63,7 @@ Les opérations des joueurs (dons, achats, remboursements…) sont validées et 
 - Deux préréglages : **fantasy** (pp, po, pe, pa, pc, reliés à la fiche dnd5e) et **une seule monnaie** (crédits).
 - Une pièce peut être reliée à un **champ de la fiche** (ex. `gp` pour dnd5e) ; sinon, Mint la stocke lui-même sur l'acteur.
 - Les montants se tapent librement : `2 po 5 pa`, `2po5pa`, `1,5` (sans unité = devise principale).
+- Chaque pièce peut servir ou non à **écrire les prix** : par défaut, le platine et l'électrum sont masqués, pour lire « 37 po 7 pc » plutôt que « 3 pp 1 pe 2 pa 7 pc ». Les bourses montrent toujours toutes les pièces.
 
 La **Bourse** affiche les pièces d'un personnage par système, avec le total. On peut :
 
@@ -125,6 +159,13 @@ await mint.pot.refund(id);                 // tout le monde récupère sa mise
 // Historique
 await mint.history.add({ type: "otium", text: "…", actors: [actor.uuid] });
 mint.history.for(actor);
+
+// Économie du monde
+mint.world.get();                                  // le monde (régions, biens, factions…)
+mint.world.price("port-brume", "ble");             // cours d'un bien dans une région
+await mint.world.buyShares(factionId, actorUuid, 5);
+await mint.world.requestLoan(bankId, actorUuid, 1000, { dueDays: 60 });
+mint.openExchange("markets"); mint.openWorldEditor();
 ```
 
 Le hook `mint-economy.ready` est appelé avec l'API quand Mint est prêt. La cagnotte se règle par le MJ ou par l'utilisateur qui l'a ouverte.
@@ -134,7 +175,8 @@ Le hook `mint-economy.ready` est appelé avec l'API quand Mint est prêt. La cag
 Aucune dépendance pour le module lui-même. Pour les vérifications :
 
 ```
-npm test        # calculs (monnaie, prix, intérêts) + test de fumée dans un faux Foundry
+npm test        # calculs (monnaie, prix, intérêts, économie du monde) + test de fumée dans un faux Foundry
+node tools/preview.mjs apercu   # pages HTML des fenêtres de la Bourse, pour les voir sans Foundry
 npm run check   # syntaxe, imports, traductions, manifeste
 ```
 

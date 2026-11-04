@@ -217,7 +217,7 @@ for (const a of [heroA, heroB, merchant]) game.actors.set(a.id, a);
 const value = (a) => api.value(a);
 
 /* ---------- monnaies ---------- */
-assert.equal(api.format(1050), "1 pp 1 pe");
+assert.equal(api.format(1050), "10 po 5 pa", "prix écrits sans platine ni électrum");
 assert.equal(api.parse("2 po 5 pa"), 250);
 assert.equal(value(heroA), 1050, "lecture de system.currency (dnd5e)");
 
@@ -573,6 +573,15 @@ for (const tab of ["goods", "regions", "routes", "factions", "settings"]) {
   const html = editor._html();
   assert.ok(html.length > 300 && !html.includes("undefined") && !html.includes("NaN"), `éditeur : ${tab}`);
 }
+const { ShopEditor } = await import("../scripts/apps/shop-editor.js");
+const shopEd = new ShopEditor(indexed.id);
+for (const tab of ["shop", "items", "customers"]) {
+  shopEd.tab = tab;
+  const html = shopEd._html();
+  assert.ok(!html.includes("undefined") && !html.includes("NaN"), `éditeur de boutique : ${tab}`);
+}
+shopEd.tab = "items";
+assert.ok(shopEd._html().includes("readonly"), "prix indexé non modifiable à la main");
 globalThis.__mintApps = { ExchangeApp, WorldEditor };
 
 assert.ok(chat.length >= 6, "transactions annoncées dans le chat");
