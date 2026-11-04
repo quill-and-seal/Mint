@@ -18,7 +18,8 @@ export const SETTINGS = Object.freeze({
   haggleFormula: "haggleFormula",
   dueReminderDays: "dueReminderDays",
   pots: "pots",
-  otiumHistory: "otiumHistory"
+  otiumHistory: "otiumHistory",
+  world: "world"
 });
 
 /** Flag d'acteur qui contient la bourse (devises non reliées à la fiche). */

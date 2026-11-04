@@ -9,9 +9,10 @@ const { ApplicationV2, DialogV2 } = foundry.applications.api;
 /** Fenêtres ouvertes, rafraîchies quand l'argent, les boutiques ou les dettes changent. */
 export const openApps = new Set();
 
-export function refreshApps(kind = null) {
+export function refreshApps(...kinds) {
+  const wanted = kinds.filter(Boolean);
   for (const app of openApps) {
-    if (!kind || app.constructor.watches?.includes(kind)) app.render();
+    if (!wanted.length || wanted.some((k) => app.constructor.watches?.includes(k))) app.render();
   }
 }
 

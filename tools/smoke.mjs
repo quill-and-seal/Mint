@@ -158,8 +158,9 @@ globalThis.game = {
   time: { worldTime: 0 },
   actors: new Collection(),
   modules: new Map([["mint-economy", {}], ["otium", { active: true }]]),
-  scenes: [{ tokens: sceneTokens, grid: { size: 100, distance: 5 } }],
+  scenes: Object.assign([{ id: "scene1", name: "Port", tokens: sceneTokens, grid: { size: 100, distance: 5 } }], { get: (id) => game.scenes.find((x) => x.id === id) }),
   i18n: {
+    lang: "fr",
     localize,
     format: (k, d) => localize(k).replace(/\{(\w+)\}/g, (_, x) => d[x]),
     has: (k) => getProperty(fr, k) !== undefined
@@ -454,6 +455,125 @@ assert.ok(otiumEntry, "commande Otium inscrite à l'historique");
 assert.equal(otiumEntry.amount, 8);
 assert.match(otiumEntry.text, /Le Gué/);
 game.user = gm;
+
+/* ---------- 0.3 : économie du monde ---------- */
+const { getWorld, resetWorld, advanceDays, startEvent, marketPrice, syncWithWorldTime } = await import("../scripts/world.js");
+game.user = gm;
+assert.equal(getWorld(), null, "pas d'économie avant création");
+await resetWorld("preset");
+let world = getWorld();
+assert.equal(world.regions.length, 4);
+assert.equal(world.goods.length, 8);
+assert.equal(world.factions.length, 4);
+assert.equal(world.regions[0].system, "standard", "régions dans la monnaie par défaut");
+
+// Temps du monde : 3 jours passent → 3 ticks
+const t0 = game.time.worldTime;
+game.time.worldTime = t0 + 3 * 86400 + 10;
+for (const f of hooks.updateWorldTime ?? []) await f(game.time.worldTime);
+world = getWorld();
+assert.equal(world.day, 3, "l'économie suit le temps du monde");
+assert.equal(world.history.index.length, 3);
+assert.equal(world.history.money.length, 1, "masse monétaire relevée");
+await advanceDays(30);
+world = getWorld();
+assert.equal(world.day, 33);
+const wheatPort = marketPrice("port-brume", "ble");
+const wheatVale = marketPrice("valombre", "ble");
+assert.ok(wheatPort > wheatVale, `le blé coûte plus cher au port qu'à la campagne (${wheatPort.toFixed(1)} / ${wheatVale.toFixed(1)})`);
+
+// Événement : famine sur Valombre
+await startEvent("famine", { region: "valombre" });
+world = getWorld();
+assert.equal(world.events.length, 1);
+assert.equal(world.events[0].region, "valombre");
+await advanceDays(10);
+assert.ok(marketPrice("valombre", "ble") > wheatVale * 1.2, "la famine fait grimper le blé");
+
+// Actions : Aria achète puis revend
+game.user = alice;
+heroA.system.currency = { pp: 0, gp: 500, ep: 0, sp: 0, cp: 0 };
+const fac = getWorld().factions.find((f) => f.id === "guilde-forgerons");
+const before3 = value(heroA);
+const boughtShares = await api.world.buyShares(fac.id, heroA.uuid, 5);
+assert.ok(boughtShares.amount > 0 && value(heroA) === before3 - boughtShares.amount, "achat débité");
+let f2 = getWorld().factions.find((f) => f.id === fac.id);
+assert.equal(f2.holders[heroA.uuid].n, 5, "actions détenues");
+assert.ok(f2.treasury > fac.treasury, "la faction encaisse");
+await assert.rejects(api.world.sellShares(fac.id, heroA.uuid, 50), (e) => e.key === "NotEnoughShares");
+await assert.rejects(api.world.buyShares(fac.id, heroB.uuid, 1), (e) => e.key === "NotOwner");
+const soldShares = await api.world.sellShares(fac.id, heroA.uuid, 2);
+assert.ok(soldShares.amount > 0 && soldShares.held === 3);
+
+// Dividendes versés aux actionnaires (période réglée à 5 jours pour le test)
+game.user = gm;
+world = getWorld();
+world.settings.dividendDays = 5;
+const { saveWorld } = await import("../scripts/world.js");
+await saveWorld(world);
+const beforeDiv = value(heroA);
+await advanceDays(5);
+assert.ok(value(heroA) > beforeDiv, "dividendes versés");
+assert.ok(api.history.get().some((e) => e.type === "dividend"), "dividende à l'historique");
+
+// Prêt bancaire : demande → MJ accepte → versement → remboursement
+game.user = alice;
+const bank = getWorld().factions.find((f) => f.kind === "bank");
+const bankBefore = bank.treasury;
+const cashBefore = value(heroA);
+await assert.rejects(api.world.requestLoan(bank.id, heroA.uuid, 99999999), (e) => e.key === "LoanTooBig");
+const { id: loanId } = await api.world.requestLoan(bank.id, heroA.uuid, 1000, { dueDays: 30 });
+let loan = api.getDebts()[loanId];
+assert.equal(loan.status, "proposed");
+assert.equal(loan.creditor.faction, bank.id);
+assert.equal(loan.rate, bank.loanRate);
+await assert.rejects(api.debt.respond(loanId, true), (e) => e.key === "NotParty");
+game.user = gm;
+await api.debt.respond(loanId, true);
+assert.equal(value(heroA), cashBefore + 1000, "prêt versé au personnage");
+assert.equal(Math.round(getWorld().factions.find((f) => f.id === bank.id).treasury), Math.round(bankBefore - 1000), "trésorerie de la banque diminuée");
+game.user = alice;
+await api.debt.repay(loanId, 400);
+assert.equal(Math.round(getWorld().factions.find((f) => f.id === bank.id).treasury), Math.round(bankBefore - 600), "remboursement encaissé par la banque");
+
+// Boutique indexée sur le cours du blé à Port-Brume
+game.user = gm;
+const indexed = newShop({ name: "Boulangerie", open: true, region: "port-brume" });
+indexed.items.push(newItem({ name: "Sac de blé", uuid: "", price: 1, stock: null, good: "ble", goodQty: 1 }));
+await saveShop(indexed);
+const bread = api.getShop(indexed.id).items[0];
+assert.equal(bread.price, Math.round(marketPrice("port-brume", "ble")), "prix de base = cours du blé");
+assert.equal(bread.market, true);
+await advanceDays(1);
+assert.equal(api.getShop(indexed.id).items[0].price, Math.round(marketPrice("port-brume", "ble")), "le prix suit le cours");
+
+// Retour en arrière dans le temps : pas de simulation
+const dayNow = getWorld().day;
+game.time.worldTime -= 10 * 86400;
+await syncWithWorldTime(game.time.worldTime);
+assert.equal(getWorld().day, dayNow, "pas de tick en remontant le temps");
+
+// Les fenêtres se construisent sans erreur
+const { ExchangeApp } = await import("../scripts/apps/exchange-app.js");
+const { WorldEditor } = await import("../scripts/apps/world-editor.js");
+for (const user of [gm, alice]) {
+  game.user = user;
+  const app = new ExchangeApp();
+  for (const tab of ["markets", "factions", "portfolio", "money", "events"]) {
+    app.tab = tab;
+    const html = app._html();
+    assert.ok(html.length > 500, `onglet ${tab} (${user.name})`);
+    assert.ok(!html.includes("undefined") && !html.includes("NaN"), `onglet ${tab} sans valeur manquante (${user.name})`);
+  }
+}
+game.user = gm;
+const editor = new WorldEditor();
+for (const tab of ["goods", "regions", "routes", "factions", "settings"]) {
+  editor.tab = tab;
+  const html = editor._html();
+  assert.ok(html.length > 300 && !html.includes("undefined") && !html.includes("NaN"), `éditeur : ${tab}`);
+}
+globalThis.__mintApps = { ExchangeApp, WorldEditor };
 
 assert.ok(chat.length >= 6, "transactions annoncées dans le chat");
 assert.ok(chat.filter((c) => c.roll === undefined).every((c) => c.whisper?.includes("gm")), "transactions en privé au MJ par défaut");

@@ -18,6 +18,9 @@ import { WalletApp } from "./apps/wallet-app.js";
 import { ShopApp } from "./apps/shop-app.js";
 import { LedgerApp } from "./apps/ledger-app.js";
 import { HistoryApp } from "./apps/history-app.js";
+import { ExchangeApp } from "./apps/exchange-app.js";
+import { WorldEditor } from "./apps/world-editor.js";
+import { syncWithWorldTime, worldApi } from "./world.js";
 import { CurrencyConfig } from "./apps/currency-config.js";
 
 /* -------------------------------------------- */
@@ -70,6 +73,20 @@ export function openHistory(actor = null) {
   return new HistoryApp(actor).render({ force: true });
 }
 
+export function openExchange(tab = null) {
+  const app = findOpen(ExchangeApp);
+  if (app) {
+    if (tab) app.tab = tab;
+    return app.render({ force: true });
+  }
+  return new ExchangeApp(tab).render({ force: true });
+}
+
+export function openWorldEditor() {
+  if (!game.user.isGM) return null;
+  return (findOpen(WorldEditor) ?? new WorldEditor()).render({ force: true });
+}
+
 export function openCurrencies() {
   return (findOpen(CurrencyConfig) ?? new CurrencyConfig()).render({ force: true });
 }
@@ -92,6 +109,8 @@ Hooks.once("init", () => {
   hidden(SETTINGS.debts, Object, {}, () => refreshApps("debts"));
   hidden(SETTINGS.history, Object, { entries: [] }, () => refreshApps("history"));
   hidden(SETTINGS.pots, Object, {});
+  // L'économie du monde : les boutiques indexées suivent ses cours
+  hidden(SETTINGS.world, Object, {}, () => refreshApps("world", "shops"));
   hidden(SETTINGS.sheetPath, String, "auto", () => refreshApps());
 
   const visible = (key, data) =>
@@ -162,7 +181,11 @@ Hooks.once("ready", () => {
     getDebts,
     debt: debtApi,
     // Historique
-    history: historyApi
+    history: historyApi,
+    // Économie du monde
+    world: worldApi,
+    openExchange,
+    openWorldEditor
   };
 
   Hooks.callAll(`${MODULE_ID}.ready`, game.modules.get(MODULE_ID).api);
@@ -192,6 +215,7 @@ Hooks.on("updateWorldTime", async (time) => {
   if (!game.user.isGM || game.users.activeGM?.id !== game.user.id) return;
   const now = time ?? worldTime();
   try {
+    await syncWithWorldTime(now);
     await restockShops({ now });
     await checkDueDates(now);
   } catch (err) {
@@ -248,6 +272,7 @@ Hooks.on("getSceneControlButtons", (controls) => {
   tokens.tools.mintWallet = button("mintWallet", "MINT.Controls.Wallet", "fa-solid fa-coins", base, () => openWallet());
   tokens.tools.mintShops = button("mintShops", "MINT.Controls.Shops", "fa-solid fa-store", base + 1, () => openShops());
   tokens.tools.mintLedger = button("mintLedger", "MINT.Controls.Ledger", "fa-solid fa-book", base + 2, () => openLedger());
+  tokens.tools.mintExchange = button("mintExchange", "MINT.Controls.Exchange", "fa-solid fa-chart-line", base + 3, () => openExchange());
 });
 
 // Bouton « Bourse » (et « Boutique » pour un marchand) dans l'en-tête des fiches d'acteur

@@ -83,6 +83,7 @@ async function cleanParty(party, user) {
     const actor = await resolveActor(party.uuid);
     return { uuid: actor.uuid, name: actor.name };
   }
+
   if (!user.isGM) throw new MintError("NoActor");
   const name = String(party?.name ?? "").trim();
   if (!name) throw new MintError("NoParty");
@@ -126,7 +127,26 @@ async function disburse(debt) {
   const creditor = partyActor(debt.creditor);
   const debtor = partyActor(debt.debtor);
   if (creditor) await chargeActor(creditor, debt.principal, debt.system);
+  else await creditorMoney(debt, -debt.principal);
   if (debtor) await creditActor(debtor, debt.principal, debt.system);
+}
+
+/**
+ * Créanciers sans acteur (une banque de l'économie du monde, par exemple) : un autre module
+ * de Mint peut suivre l'argent qui leur sort (prêt versé, delta < 0) ou leur revient (remboursement).
+ */
+const creditorHandlers = [];
+export function registerCreditorHandler(fn) {
+  creditorHandlers.push(fn);
+}
+async function creditorMoney(debt, delta) {
+  for (const fn of creditorHandlers) {
+    try {
+      await fn(debt, delta);
+    } catch (err) {
+      console.error("Mint |", err);
+    }
+  }
 }
 
 async function activate(debts, debt) {
@@ -166,6 +186,28 @@ function load(id) {
   const debt = debts[id];
   if (!debt) throw new MintError("NoDebt");
   return { debts, debt };
+}
+
+/**
+ * Demande de prêt à une faction de l'économie du monde (banque), appelée côté MJ par world.js
+ * après validation. La dette attend la réponse du MJ, qui joue la banque.
+ */
+export async function proposeFactionLoan({ faction, debtorUuid, principal, system, rate, periodDays, dueDays, lateFee, note }, user) {
+  const debt = await buildDebt(
+    { creditor: { uuid: null, name: "?" }, debtor: { uuid: debtorUuid }, principal, system, rate, periodDays, dueDays, lateFee, note, transfer: true },
+    { ...user, isGM: true, id: user.id }
+  );
+  debt.creditor = { uuid: null, name: faction.name, faction: faction.id };
+  debt.awaiting = "creditor";
+  const debts = getDebts();
+  debts[debt.id] = debt;
+  await saveDebts(debts);
+  notifyUsers(game.users.filter((u) => u.isGM && u.active).map((u) => u.id), "Notify.LoanRequest", {
+    name: debt.debtor.name,
+    bank: faction.name,
+    amount: format(debt.principal, debt.system)
+  });
+  return debt;
 }
 
 /* -------------------------------------------- */
@@ -247,6 +289,7 @@ registerHandler("debt.repay", async ({ id, amount }, user) => {
   const creditor = partyActor(debt.creditor);
   if (debtor) await chargeActor(debtor, value, debt.system);
   if (creditor) await creditActor(creditor, value, debt.system);
+  else await creditorMoney(debt, value);
 
   debt.repaid = (Number(debt.repaid) || 0) + value;
   const left = owed(debt);

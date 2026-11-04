@@ -17,7 +17,10 @@
  *   customers   : { [UUID acteur]: % } réputation (négatif = moins cher pour ce client)
  *   haggle      : { enabled, dc, maxDiscount, penalty, hours } réglages du marchandage
  *   haggles     : { [UUID acteur]: { pct, until, total } } marchandages en cours (temps du monde)
- *   items: [{ id, name, img, uuid, description, price, stock, target, restock, modifier, buyback }]
+ *   region      : région de l'économie du monde (les articles reliés à un bien suivent son cours)
+ *   items: [{ id, name, img, uuid, description, price, stock, target, restock, modifier, buyback, good, goodQty }]
+ *     good    : bien de l'économie du monde ; le prix de base suit alors son cours dans la région
+ *     goodQty : quantité de ce bien que représente un article (ex. 0,5 sac de blé pour une miche)
  *     price : prix de base en unités de base du système de la boutique
  *     stock : null = illimité ; target = stock normal ; restock = unités par intervalle
  * }
@@ -27,6 +30,7 @@ import { MODULE_ID, SETTINGS, MintError, t, esc, worldTime, log } from "./consta
 import { getSystem, defaultSystemId, format } from "./currencies.js";
 import { PRICING_DEFAULTS, unitPrice, buyTotal, sellTotal, restockStock, customerFactors, haggleOutcome } from "./core/pricing.js";
 import { registerHandler, gmCall } from "./socket.js";
+import { getWorld, marketPrice } from "./world.js";
 import { resolveActor, requireOwner, chargeActor, creditActor, actorValue } from "./wallet.js";
 import { logTransaction } from "./chat.js";
 
@@ -88,7 +92,9 @@ export function normalizeItem(item) {
     target: stock === null ? null : Math.max(0, Math.floor(numOr(item.target, stock))),
     restock: Math.max(0, Math.floor(numOr(item.restock, 0))),
     modifier: Math.max(0, numOr(item.modifier, 1)),
-    buyback: item.buyback !== false
+    buyback: item.buyback !== false,
+    good: String(item.good ?? ""),
+    goodQty: Math.max(0.01, numOr(item.goodQty, 1))
   };
 }
 
@@ -140,8 +146,24 @@ export function normalizeShop(shop) {
       hours: Math.max(0, numOr(haggle.hours, HAGGLE_DEFAULTS.hours))
     },
     haggles: foundry.utils.deepClone(shop.haggles ?? {}),
-    items: (shop.items ?? []).map(normalizeItem)
+    region: String(shop.region ?? ""),
+    items: indexItems((shop.items ?? []).map(normalizeItem), shop)
   };
+}
+
+/** Articles reliés à un bien : le prix de base suit le cours de la région de la boutique. */
+function indexItems(items, shop) {
+  if (!shop.region || !items.some((i) => i.good)) return items;
+  const world = getWorld();
+  const system = getSystem(shop.system)?.id ?? defaultSystemId();
+  for (const item of items) {
+    if (!item.good) continue;
+    const p = marketPrice(shop.region, item.good, system, world);
+    if (p === null) continue;
+    item.price = Math.max(1, Math.round(p * item.goodQty));
+    item.market = true;
+  }
+  return items;
 }
 
 /** Boutique tenue par cet acteur (ou par l'acteur de base de ce token). */

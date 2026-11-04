@@ -59,7 +59,7 @@ for (const k of fr) if (!en.has(k)) fail(`clé absente de en.json : ${k}`);
 for (const k of en) if (!fr.has(k)) fail(`clé absente de fr.json : ${k}`);
 
 const used = new Set();
-const prefixes = "Common|Controls|Settings|Preset|Wallet|Shop|Editor|Ledger|Currencies|Chat|Notify|Error|History|Haggle|Pot";
+const prefixes = "Common|Controls|Settings|Preset|Wallet|Shop|Editor|Ledger|Currencies|Chat|Notify|Error|History|Haggle|Pot|Exchange|World";
 for (const f of files) {
   const src = readFileSync(f, "utf8");
   for (const m of src.matchAll(new RegExp(`"(?:MINT\\.)?((?:${prefixes})\\.[A-Za-z.]+)"`, "g"))) used.add(`MINT.${m[1]}`);
@@ -78,6 +78,16 @@ const dynamic = [
     (k) => [`MINT.Settings.${k}.Name`, `MINT.Settings.${k}.Hint`]
   )
 ];
+dynamic.push(
+  ...["markets", "factions", "portfolio", "money", "events"].map((k) => `MINT.Exchange.Tab.${k}`),
+  ...["guild", "company", "bank"].map((k) => `MINT.Exchange.Kind.${k}`),
+  ...["proposed", "active", "closed"].map((k) => `MINT.Exchange.LoanStatus.${k}`),
+  ...["goods", "regions", "routes", "factions", "settings"].map((k) => `MINT.World.Tab.${k}`),
+  ...["food", "raw", "goods", "luxury"].map((k) => `MINT.World.Category.${k}`),
+  ...["elasticity", "coverDays", "minFactor", "maxFactor", "tradeIntensity", "volatility", "spread", "dividendDays", "historySize"].flatMap(
+    (k) => [`MINT.World.Set.${k}`, `MINT.World.Set.${k}Hint`]
+  )
+);
 for (const k of dynamic) if (!fr.has(k)) fail(`clé dynamique absente : ${k}`);
 for (const r of ["repaid", "forgiven", "cancelled", "refused", "withdrawn"]) {
   if (!fr.has(`MINT.Ledger.Closed.${r}`)) fail(`clé dynamique absente : MINT.Ledger.Closed.${r}`);
